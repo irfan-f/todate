@@ -9,7 +9,7 @@ function sortByTime(a: TimeType, b: TimeType) {
 
 const TimeLine = ({ data }: { data: TimesType }) => {
   return (
-    <div className="h-full w-full flex flex-col justify-between items-start">
+    <div className="h-11/12 w-full flex flex-col items-start overflow-scroll overflow-x-auto">
       {Object.values(data).sort(sortByTime).map((time) => {
         // Render each event with its title
         return (

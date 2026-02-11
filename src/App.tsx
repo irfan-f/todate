@@ -7,6 +7,7 @@ import TimeForm from './components/TimeForm';
 import TagForm from './components/TagForm';
 import TimeLine from './components/TimeLine';
 import NewButton from './components/NewButton';
+import Modal from './components/Modal';
 
 function App() {
   const [times, setTimes] = useState<TimesType>({});
@@ -15,9 +16,15 @@ function App() {
   const [isTagFormModalOpen, setIsTagFormModalOpen] = useState(false);
 
   function toggleTimeModal(): void {
+    if (isTagFormModalOpen) {
+      toggleTagModal();
+    }
     setIsTimeFormModalOpen(!isTimeFormModalOpen);
   }
   function toggleTagModal(): void {
+    if (isTimeFormModalOpen) {
+      toggleTimeModal();
+    }
     setIsTagFormModalOpen(!isTagFormModalOpen);
   }
 
@@ -39,7 +46,7 @@ function App() {
 
   return (
     <>
-      <div className='sticky top-0 h-1/12 w-full p-4 flex flex-row justify-between items-center bg-gray-500'>
+      <div className='h-1/12 w-full p-4 flex flex-row justify-between items-center bg-gray-500'>
         <div className='w-1/3 flex justify-start font-bold text-4xl'>
           Todate
         </div>
@@ -52,9 +59,9 @@ function App() {
       </div>
       <TimeLine data={times} />
       {isTimeFormModalOpen &&
-        createPortal(<TimeForm tags={tags} addTime={addTime} />, document.body)}
+        createPortal(<Modal title="Create an Event" closeFn={toggleTimeModal}><TimeForm tags={tags} addTime={addTime} /></Modal>, document.body)}
       {isTagFormModalOpen &&
-        createPortal(<TagForm addTag={addTag} />, document.body)}
+        createPortal(<Modal title="Create a Tag"closeFn={toggleTagModal}><TagForm addTag={addTag} /></Modal>, document.body)}
     </>
   );
 }
