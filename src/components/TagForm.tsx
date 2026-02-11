@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { TagType } from '../App';
+import type { TagType } from '../types';
 
 const TagForm = ({ addTag }: { addTag: (t: TagType) => void }) => {
   const [name, setName] = useState('');

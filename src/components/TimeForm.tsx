@@ -1,7 +1,7 @@
 import { useState } from "react";
-import type { TimeType, TagType, Tags } from '../App';
+import type { TimeType, TagType, TagsType } from '../types';
 
-const TimeForm = ({ tags, addTime }: { tags: Tags, addTime: (t: TimeType) => void }) => {
+const TimeForm = ({ tags, addTime }: { tags: TagsType, addTime: (t: TimeType) => void }) => {
   const [title, setTitle] = useState('');
   const [datetime, setDatetime] = useState('');
   const [comment, setComment] = useState('');
@@ -53,12 +53,13 @@ const TimeForm = ({ tags, addTime }: { tags: Tags, addTime: (t: TimeType) => voi
         {/* Date and Time - Optional */}
         <div>
           <label htmlFor="datetime" className="block text-sm font-medium text-gray-700 mb-1">
-            Date & Time (Optional)
+            Date & Time
           </label>
           <input
             id="datetime"
             type="datetime-local"
             value={datetime}
+            required={true}
             onChange={(e) => setDatetime(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
@@ -85,22 +86,29 @@ const TimeForm = ({ tags, addTime }: { tags: Tags, addTime: (t: TimeType) => voi
 
           {/* Selected Tags Chips */}
           <div className="flex flex-wrap gap-2 mb-2 min-h-10">
-            {selectedTags.map((tag) => (
-              <span
-                key={tag._id}
-                className={`text-white px-3 py-1 rounded-full text-sm font-medium bg-[${tag.color}] flex items-center`}
-              >
-                {tag.name}
-                <button
-                  type="button"
-                  onClick={() => removeTag(tag._id)}
-                  className="ml-2 text-white hover:text-gray-200"
-                  aria-label={`Remove ${tag.name}`}
+            {selectedTags.map((tag) => {
+              return (
+                <span
+                  key={tag._id}
+                  className={`px-3 py-1 rounded-full text-sm font-medium flex items-center hover:bg-gray-100 cursor-default`}
                 >
-                  &times;
-                </button>
-              </span>
-            ))}
+                  <span
+                    className={`inline-block w-3 h-3 rounded mr-2`}
+                    style={{backgroundColor: tag.color}}
+                    aria-hidden="true"
+                  ></span>
+                  {tag.name}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag._id)}
+                    className="ml-2 cursor-pointer"
+                    aria-label={`Remove ${tag.name}`}
+                  >
+                    &times;
+                  </button>
+                </span>
+              )
+            })}
           </div>
 
           {/* Custom Dropdown */}
