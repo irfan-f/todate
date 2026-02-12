@@ -19,7 +19,7 @@ const TagForm = ({ addTag }: { addTag: (t: TagType) => void }) => {
       noValidate
     >
       {/* Title - Required */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+      <div className="w-11/12 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-2">
         <label htmlFor="tag-name" className="text-sm sm:text-base font-bold text-gray-700 shrink-0">
           Name
         </label>
@@ -28,7 +28,7 @@ const TagForm = ({ addTag }: { addTag: (t: TagType) => void }) => {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 invalid:border-red-500"
+          className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 invalid:border-red-500"
           placeholder="Enter tag name"
           required
           aria-required="true"
@@ -44,7 +44,7 @@ const TagForm = ({ addTag }: { addTag: (t: TagType) => void }) => {
             value={color}
             onChange={(e) => setColor(e.target.value)}
             onInput={(e) => setColor(e.currentTarget.value)}
-            className="h-10 w-10 min-w-10 cursor-pointer rounded border border-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            className="h-10 w-10 min-w-10 cursor-pointer rounded border border-gray-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             required
             aria-required="true"
             aria-label="Tag color"
@@ -55,7 +55,7 @@ const TagForm = ({ addTag }: { addTag: (t: TagType) => void }) => {
       {/* Submit Button */}
       <button
         type="submit"
-        className="w-full sm:w-auto sm:min-w-[140px] min-h-[44px] bg-blue-600 hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 text-white font-medium py-2 px-4 rounded-lg transition-colors touch-manipulation"
+        className="w-full sm:w-auto sm:min-w-[140px] min-h-[44px] bg-blue-600 hover:bg-blue-700 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-2 text-white font-medium py-2 px-4 rounded-lg transition-colors touch-manipulation"
       >
         Save Tag
       </button>

@@ -16,15 +16,9 @@ function App() {
   const [isTagFormModalOpen, setIsTagFormModalOpen] = useState(false);
 
   function toggleTimeModal(): void {
-    if (isTagFormModalOpen) {
-      toggleTagModal();
-    }
     setIsTimeFormModalOpen(!isTimeFormModalOpen);
   }
   function toggleTagModal(): void {
-    if (isTimeFormModalOpen) {
-      toggleTimeModal();
-    }
     setIsTagFormModalOpen(!isTagFormModalOpen);
   }
 
@@ -65,9 +59,9 @@ function App() {
         <TimeLine data={times} />
       </main>
       {isTimeFormModalOpen &&
-        createPortal(<Modal title="Create an Event" closeFn={toggleTimeModal}><TimeForm tags={tags} addTime={addTime} /></Modal>, document.body)}
+        createPortal(<Modal title="Create an Event" closeFn={toggleTimeModal}><TimeForm tags={tags} addTime={addTime} toggleTagModal={toggleTagModal} /></Modal>, document.body)}
       {isTagFormModalOpen &&
-        createPortal(<Modal title="Create a Tag"closeFn={toggleTagModal}><TagForm addTag={addTag} /></Modal>, document.body)}
+        createPortal(<Modal title="Create a Tag" closeFn={toggleTagModal}><TagForm addTag={addTag} /></Modal>, document.body)}
     </>
   );
 }
