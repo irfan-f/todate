@@ -1,4 +1,4 @@
-import type { TimesType, TimeType } from '../types';
+import type { TimesType, TimeType, SchoolStartDate } from '../types';
 import Time from './Time';
 
 function sortByTime(a: TimeType, b: TimeType) {
@@ -7,7 +7,13 @@ function sortByTime(a: TimeType, b: TimeType) {
   return bVal - aVal;
 }
 
-const TimeLine = ({ data }: { data: TimesType }) => {
+const TimeLine = ({
+  data,
+  schoolStartDate,
+}: {
+  data: TimesType;
+  schoolStartDate: SchoolStartDate | null;
+}) => {
   const sorted = Object.values(data).sort(sortByTime);
 
   return (
@@ -21,10 +27,11 @@ const TimeLine = ({ data }: { data: TimesType }) => {
           No events yet. Create one to get started.
         </p>
       ) : (
-        sorted.map((time) => <Time data={time} key={time._id} />)
+        sorted.map((time) => (
+          <Time data={time} key={time._id} schoolStartDate={schoolStartDate} />
+        ))
       )}
     </div>
   );
 };
-
 export default TimeLine;

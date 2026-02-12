@@ -1,11 +1,21 @@
-import type { TimeType } from '../types';
+import type { TimeType, SchoolStartDate } from '../types';
+import { formatDateDisplay } from '../utils/date';
 
-const Time = ({ data }: { data: TimeType }) => {
+interface TimeProps {
+  data: TimeType;
+  schoolStartDate?: SchoolStartDate | null;
+}
+
+const Time = ({ data, schoolStartDate = null }: TimeProps) => {
   const dateTime = new Date(data.date);
-  const dateLabel = dateTime.toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+  const dateLabel = data.dateDisplay
+    ? formatDateDisplay(data.dateDisplay, {
+        schoolStart: schoolStartDate ?? undefined,
+      })
+    : dateTime.toLocaleString(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      });
 
   return (
     <article
