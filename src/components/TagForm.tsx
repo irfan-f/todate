@@ -15,40 +15,47 @@ const TagForm = ({ addTag }: { addTag: (t: TagType) => void }) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col items-center justify-center space-y-6"
+      className="flex flex-col items-stretch sm:items-center justify-center gap-6"
+      noValidate
     >
       {/* Title - Required */}
-      <div className="flex flex-row items-center">
-        <label htmlFor="name" className="block text-md font-bold text-gray-700 pr-2">
-          Name:
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+        <label htmlFor="tag-name" className="text-sm sm:text-base font-bold text-gray-700 shrink-0">
+          Name
         </label>
         <input
-          id="name"
+          id="tag-name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="px-1 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          placeholder="Enter Tag name"
+          className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 invalid:border-red-500"
+          placeholder="Enter tag name"
           required
+          aria-required="true"
+          autoComplete="off"
         />
-        <label htmlFor="color" className="block text-md font-bold text-gray-700 mb-1 pl-2">
-          Color:
-        </label>
-        <input
-          id="color"
-          type="color"
-          value={color}
-          onChange={(e) => setColor(e.target.value)}
-          onInput={(e) => setColor(e.currentTarget.value)}
-          className="justify-self-center h-10 w-10 ml-1"
-          required
-        />
+        <div className="flex flex-row items-center gap-2">
+          <label htmlFor="tag-color" className="text-sm sm:text-base font-bold text-gray-700 shrink-0">
+            Color
+          </label>
+          <input
+            id="tag-color"
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            onInput={(e) => setColor(e.currentTarget.value)}
+            className="h-10 w-10 min-w-10 cursor-pointer rounded border border-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            required
+            aria-required="true"
+            aria-label="Tag color"
+          />
+        </div>
       </div>
 
       {/* Submit Button */}
       <button
         type="submit"
-        className="w-1/3 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+        className="w-full sm:w-auto sm:min-w-[140px] min-h-[44px] bg-blue-600 hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 text-white font-medium py-2 px-4 rounded-lg transition-colors touch-manipulation"
       >
         Save Tag
       </button>

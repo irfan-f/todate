@@ -8,16 +8,23 @@ function sortByTime(a: TimeType, b: TimeType) {
 }
 
 const TimeLine = ({ data }: { data: TimesType }) => {
+  const sorted = Object.values(data).sort(sortByTime);
+
   return (
-    <div className="h-11/12 w-full flex flex-col items-start overflow-scroll overflow-x-auto">
-      {Object.values(data).sort(sortByTime).map((time) => {
-        // Render each event with its title
-        return (
-          <Time data={time} key={time._id} />
-        )
-      })}
+    <div
+      className="flex-1 min-h-0 w-full flex flex-col items-center overflow-y-auto overflow-x-hidden py-2"
+      role="list"
+      aria-label="Event timeline"
+    >
+      {sorted.length === 0 ? (
+        <p className="text-gray-500 text-sm sm:text-base p-4" role="status">
+          No events yet. Create one to get started.
+        </p>
+      ) : (
+        sorted.map((time) => <Time data={time} key={time._id} />)
+      )}
     </div>
-  )
-}
+  );
+};
 
 export default TimeLine;
