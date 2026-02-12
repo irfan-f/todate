@@ -46,18 +46,24 @@ function App() {
 
   return (
     <>
-      <div className='h-1/12 w-full p-4 flex flex-row justify-between items-center bg-gray-500'>
-        <div className='w-1/3 flex justify-start font-bold text-4xl'>
+      <header
+        className="w-full shrink-0 p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:gap-0 sm:justify-between sm:items-center bg-gray-500"
+        role="banner"
+      >
+        <h1 className="font-bold text-2xl sm:text-3xl md:text-4xl text-gray-100 order-1 sm:order-0">
           Todate
-        </div>
-        <div className='w-1/3 flex justify-center'>
-          <NewButton name='Event' action={toggleTimeModal} />
-        </div>
-        <div className='w-1/3 flex justify-end'>
-          <NewButton name='Tag' action={toggleTagModal} />
-        </div>
-      </div>
-      <TimeLine data={times} />
+        </h1>
+        <nav
+          className="flex flex-row justify-center sm:justify-center gap-2 sm:gap-4 order-2 sm:order-0"
+          aria-label="Create new event or tag"
+        >
+          <NewButton name="Event" action={toggleTimeModal} ariaLabel="Create new event" />
+          <NewButton name="Tag" action={toggleTagModal} ariaLabel="Create new tag" />
+        </nav>
+      </header>
+      <main id="main-content" className="flex-1 min-h-0 flex flex-col" role="main">
+        <TimeLine data={times} />
+      </main>
       {isTimeFormModalOpen &&
         createPortal(<Modal title="Create an Event" closeFn={toggleTimeModal}><TimeForm tags={tags} addTime={addTime} /></Modal>, document.body)}
       {isTagFormModalOpen &&
