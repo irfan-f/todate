@@ -7,9 +7,6 @@ export interface TagType {
 /** Flexible date input: from vague (school year + quarter) to precise (date & time). */
 export type DatePrecision = 'school' | 'month' | 'day' | 'datetime';
 
-/** Note for non-linear progression: repeated year, skipped year, or gap in education. */
-export type SchoolYearNoteType = 'repeated' | 'skipped' | 'gap' | '';
-
 export interface DateValueSchool {
   kind: 'school';
   schoolYear: number;
@@ -44,14 +41,16 @@ export type DateValue =
 
 /** School start date (e.g. Sept 1) used to map school year + quarter → calendar date. */
 export interface SchoolStartDate {
-  month: number; // 1–12
-  day: number;   // 1–31
   /** Reference year for "Year 1" start; e.g. 2020 means Year 1 starts Sept 1, 2020. */
   referenceYear: number;
+  /** Month (1–12) when Year 1 starts; default 9 (September). */
+  month?: number;
+  /** Day of month when Year 1 starts; default 1. */
+  day?: number;
 }
 
-// Define the Event type structure
-export interface TimeType {
+/** A single todate entry (dated moment or period with title, tags, optional comment). */
+export interface TodateType {
   _id: string;
   title: string;
   /** Canonical ISO date string used for sorting (always set). */
@@ -62,6 +61,5 @@ export interface TimeType {
   tags: TagType[];
 }
 
-// Define the events object type using Record for better type safety
-export type TimesType = Record<string, TimeType>;
+export type TodatesType = Record<string, TodateType>;
 export type TagsType = Record<string, TagType>;

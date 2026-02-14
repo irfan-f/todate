@@ -1,4 +1,4 @@
-import type { DateValue, DateValueDatetime, SchoolStartDate } from '../types';
+import type { DateValue, SchoolStartDate } from '../types';
 
 /**
  * Converts a school year + quarter to an approximate calendar date using the school start date.
@@ -11,9 +11,9 @@ function schoolToIso(
   schoolStart: SchoolStartDate
 ): string {
   const year = schoolStart.referenceYear + (schoolYear - 1);
-  const startMonth = schoolStart.month - 1; // 0-indexed
+  const startMonth = (schoolStart.month ?? 9) - 1; // 0-indexed
   const quarterMonthOffset = (quarter - 1) * 3;
-  const d = new Date(year, startMonth + quarterMonthOffset, schoolStart.day, 12, 0, 0);
+  const d = new Date(year, startMonth + quarterMonthOffset, schoolStart.day ?? 1, 12, 0, 0);
   return d.toISOString();
 }
 
@@ -64,8 +64,8 @@ export function schoolQuarterToCalendarRange(
   schoolStart: SchoolStartDate
 ): { start: Date; end: Date } {
   const year = schoolStart.referenceYear + (schoolYear - 1);
-  const startMonth0 = schoolStart.month - 1 + (quarter - 1) * 3;
-  const start = new Date(year, startMonth0, schoolStart.day, 0, 0, 0);
+  const startMonth0 = (schoolStart.month ?? 9) - 1 + (quarter - 1) * 3;
+  const start = new Date(year, startMonth0, schoolStart.day ?? 1, 0, 0, 0);
   const end = new Date(start);
   end.setMonth(end.getMonth() + 3);
   end.setDate(end.getDate() - 1);
@@ -145,9 +145,10 @@ export function formatDateDisplay(
 }
 
 /**
- * Parses an existing TimeType date into a DateValue when possible (e.g. for editing).
- * Legacy events only have date: string (ISO); we treat as datetime.
+ * Formats an ISO date string for use in <input type="datetime-local"> value (YYYY-MM-DDTHH:mm).
  */
-export function isoToDateValue(iso: string): DateValueDatetime {
-  return { kind: 'datetime', iso };
+export function isoToDatetimeLocal(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

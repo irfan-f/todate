@@ -3,11 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/src/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Browser UI (address/status bar) color; matches header bg-gray-500 / dark:bg-gray-700 -->
+    <meta name="theme-color" content="#6b7280" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#374151" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>Todate</title>
+    <script>
+      (function() {
+        var dark = localStorage.theme === "dark" || (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+      })();
+    </script>
   </head>
   <body>
-    <a href="#main-content" class="sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:w-auto focus:h-auto focus:px-4 focus:py-2 focus:m-0 focus:overflow-visible focus:bg-white focus:rounded focus:shadow-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:[clip:auto]">
+    <a href="#main-content" class="sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:w-auto focus:h-auto focus:px-4 focus:py-2 focus:m-0 focus:overflow-visible focus:bg-stone-50 dark:focus:bg-gray-800 focus:rounded focus:shadow-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:[clip:auto]">
       Skip to main content
     </a>
     <div id="root"></div>

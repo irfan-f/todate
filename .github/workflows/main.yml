@@ -13,12 +13,19 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Node
         uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
       - name: Build project
         run: npm run build
+        # SVGs imported with ?raw are inlined into JS; favicon is emitted to dist/assets/
+        # base: '/todate/' in vite.config ensures GitHub Pages (project site) loads assets correctly
 
       - name: Upload production-ready build files
         uses: actions/upload-artifact@v4
