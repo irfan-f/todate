@@ -1,144 +1,304 @@
-import { useState } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-/* Types */
-import type { TimeType, TimesType, TagType, TagsType, SchoolStartDate } from './types';
-/* Components */
-import TimeForm from './components/TimeForm';
+import type { TodateType, TodatesType, TagType, TagsType, SchoolStartDate } from './types';
+import TodateForm from './components/TodateForm';
 import TagForm from './components/TagForm';
-import TimeLine from './components/TimeLine';
-import NewButton from './components/NewButton';
+import TodateLine from './components/TodateLine';
 import Modal from './components/Modal';
+import Icon from './components/Icon';
+import TimelineFilters from './components/TimelineFilters';
+import filterListIcon from './assets/filter_list.svg?raw';
+import filterListOffIcon from './assets/filter_list_off.svg?raw';
+import hourglassUpIcon from './assets/hourglass_up.svg?raw';
+import hourglassDownIcon from './assets/hourglass_down.svg?raw';
+import starIcon from './assets/star.svg?raw';
+import tagIcon from './assets/tag.svg?raw';
+import { useTheme } from './hooks/useTheme';
+import ThemeToggle from './components/ThemeToggle';
+import { headerNavButtonClass, fabSubButtonClass, fabMainButtonClass } from './constants/ui';
 
-const defaultSchoolStart: SchoolStartDate = {
-  month: 9,
-  day: 1,
-  referenceYear: 2020,
-};
+function getYearFromTodate(todate: TodateType): number {
+  return new Date(todate.date).getFullYear();
+}
 
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
+function sortByTodate(a: TodateType, b: TodateType, order: 'asc' | 'desc') {
+  const aVal = new Date(a.date).valueOf();
+  const bVal = new Date(b.date).valueOf();
+  return order === 'desc' ? bVal - aVal : aVal - bVal;
+}
 
 function App() {
-  const [times, setTimes] = useState<TimesType>({});
+  const [todates, setTodates] = useState<TodatesType>({});
   const [tags, setTags] = useState<TagsType>({});
-  const [useSchoolYears, setUseSchoolYears] = useState(false);
-  const [schoolStartDate, setSchoolStartDate] = useState<SchoolStartDate>(defaultSchoolStart);
-  const [isTimeFormModalOpen, setIsTimeFormModalOpen] = useState(false);
+  const [schoolStartDate, setSchoolStartDate] = useState<SchoolStartDate | null>(null);
+  const [isTodateFormModalOpen, setIsTodateFormModalOpen] = useState(false);
   const [isTagFormModalOpen, setIsTagFormModalOpen] = useState(false);
-  const currentYear = new Date().getFullYear();
+  const [editingTodate, setEditingTodate] = useState<TodateType | null>(null);
+  const [editingTag, setEditingTag] = useState<TagType | null>(null);
 
-  function toggleTimeModal(): void {
-    setIsTimeFormModalOpen(!isTimeFormModalOpen);
+  const todatesList = useMemo(() => Object.values(todates), [todates]);
+  const totalCount = todatesList.length;
+
+  const { minYear, maxYear } = useMemo(() => {
+    if (todatesList.length === 0) {
+      const y = new Date().getFullYear();
+      return { minYear: y, maxYear: y };
+    }
+    const years = todatesList.map(getYearFromTodate);
+    return { minYear: Math.min(...years), maxYear: Math.max(...years) };
+  }, [todatesList]);
+
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [startYear, setStartYear] = useState(minYear);
+  const [endYear, setEndYear] = useState(maxYear);
+  const [yearFilterTouched, setYearFilterTouched] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
+  const fabRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!fabOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (fabRef.current && !fabRef.current.contains(e.target as Node)) {
+        setFabOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [fabOpen]);
+
+  const effectiveStartYear = yearFilterTouched
+    ? Math.max(minYear, Math.min(startYear, endYear))
+    : minYear;
+  const effectiveEndYear = yearFilterTouched
+    ? Math.min(maxYear, Math.max(startYear, endYear))
+    : maxYear;
+
+  const handleStartYearChange = (v: number) => {
+    setYearFilterTouched(true);
+    setStartYear(v);
+  };
+  const handleEndYearChange = (v: number) => {
+    setYearFilterTouched(true);
+    setEndYear(v);
+  };
+
+  const filteredAndSorted = useMemo(() => {
+    let list = todatesList;
+    if (selectedTagIds.length > 0) {
+      list = list.filter((todate) =>
+        todate.tags.some((t) => selectedTagIds.includes(t._id))
+      );
+    }
+    list = list.filter((todate) => {
+      const y = getYearFromTodate(todate);
+      return y >= effectiveStartYear && y <= effectiveEndYear;
+    });
+    return [...list].sort((a, b) => sortByTodate(a, b, sortOrder));
+  }, [todatesList, selectedTagIds, effectiveStartYear, effectiveEndYear, sortOrder]);
+
+  const tagList = useMemo(() => Object.values(tags), [tags]);
+
+  const hasFilters = selectedTagIds.length > 0 || yearFilterTouched;
+
+  const toggleTag = (tagId: string) => {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    );
+  };
+
+  const { theme, setTheme } = useTheme();
+
+  function toggleTodateModal(): void {
+    if (isTodateFormModalOpen) setEditingTodate(null);
+    setIsTodateFormModalOpen((open) => !open);
   }
   function toggleTagModal(): void {
-    setIsTagFormModalOpen(!isTagFormModalOpen);
+    if (isTagFormModalOpen) setEditingTag(null);
+    setIsTagFormModalOpen((open) => !open);
   }
 
-  function addTime(timeToAdd: TimeType): void {
-    setTimes({
-      ...times,
-      [timeToAdd._id]: timeToAdd,
-    });
-    toggleTimeModal();
+  function openEditTodate(todate: TodateType): void {
+    setEditingTodate(todate);
+    setIsTodateFormModalOpen(true);
+  }
+
+  function openEditTag(tag: TagType): void {
+    setEditingTag(tag);
+    setIsTagFormModalOpen(true);
+  }
+
+  function addTodate(todateToAdd: TodateType): void {
+    setTodates((prev) => ({ ...prev, [todateToAdd._id]: todateToAdd }));
+    setEditingTodate(null);
+    toggleTodateModal();
+  }
+
+  function updateTodate(updated: TodateType): void {
+    setTodates((prev) => ({ ...prev, [updated._id]: updated }));
+    setEditingTodate(null);
+    toggleTodateModal();
   }
 
   function addTag(tagToAdd: TagType): void {
-    setTags({
-      ...tags,
-      [tagToAdd._id]: tagToAdd,
-    });
+    setTags((prev) => ({ ...prev, [tagToAdd._id]: tagToAdd }));
+    setEditingTag(null);
+    toggleTagModal();
+  }
+
+  function updateTag(updated: TagType): void {
+    setTags((prev) => ({ ...prev, [updated._id]: updated }));
+    setEditingTag(null);
     toggleTagModal();
   }
 
   return (
     <>
       <header
-        className="w-full shrink-0 p-3 sm:p-4 flex flex-row flex-wrap items-center justify-between gap-2 sm:gap-3 bg-gray-500"
+        className="w-full shrink-0 p-3 sm:p-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3 bg-gray-500 dark:bg-gray-700"
         role="banner"
       >
-        <h1 className="font-bold text-2xl sm:text-3xl md:text-4xl text-gray-100 shrink-0">
+        <h1 className="font-bold text-2xl sm:text-3xl md:text-4xl text-gray-100 dark:text-gray-200 justify-self-start">
           Todate
         </h1>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink min-w-0">
-          <label className="flex items-center gap-2 cursor-pointer text-gray-100 shrink-0">
-            <input
-              type="checkbox"
-              checked={useSchoolYears}
-              onChange={(e) => setUseSchoolYears(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              aria-describedby="use-school-years-desc"
-            />
-            <span id="use-school-years-desc">Use School Years</span>
-          </label>
-          {useSchoolYears && (
-            <div className="flex flex-wrap items-center gap-2 pl-2 border-l border-gray-400" aria-label="Student's first year start">
-              <span className="text-gray-200 text-sm shrink-0">Student&apos;s first year starts</span>
-              <select
-                aria-label="First year start month"
-                value={schoolStartDate.month}
-                onChange={(e) =>
-                  setSchoolStartDate({
-                    ...schoolStartDate,
-                    month: Number(e.target.value),
-                  })
-                }
-                className="px-2 py-1.5 rounded border border-gray-400 bg-gray-100 text-gray-800 text-sm shrink-0"
-              >
-                {MONTHS.map((m, i) => (
-                  <option key={m} value={i + 1}>{m}</option>
-                ))}
-              </select>
-              <input
-                type="number"
-                min={1}
-                max={31}
-                aria-label="School start day"
-                value={schoolStartDate.day}
-                onChange={(e) =>
-                  setSchoolStartDate({
-                    ...schoolStartDate,
-                    day: Math.max(1, Math.min(31, Number(e.target.value) || 1)),
-                  })
-                }
-                className="w-12 px-2 py-1.5 rounded border border-gray-400 bg-gray-100 text-gray-800 text-sm shrink-0"
-              />
-              <input
-                type="number"
-                min={1990}
-                max={currentYear + 20}
-                aria-label="First year start year"
-                value={schoolStartDate.referenceYear}
-                onChange={(e) =>
-                  setSchoolStartDate({
-                    ...schoolStartDate,
-                    referenceYear: Number(e.target.value) || currentYear,
-                  })
-                }
-                className="w-16 px-2 py-1.5 rounded border border-gray-400 bg-gray-100 text-gray-800 text-sm shrink-0"
-              />
-            </div>
-          )}
+
+        <div className="justify-self-center">
+          <ThemeToggle theme={theme} setTheme={setTheme} />
         </div>
+
         <nav
-          className="flex flex-row justify-center gap-2 sm:gap-4 shrink-0"
-          aria-label="Create new event or tag"
+          className="flex flex-row items-center gap-2 sm:gap-3 justify-self-end"
+          aria-label="Sort, filter, and create"
         >
-          <NewButton name="Event" action={toggleTimeModal} ariaLabel="Create new event" />
-          <NewButton name="Tag" action={toggleTagModal} ariaLabel="Create new tag" />
+          <button
+            type="button"
+            onClick={() => setSortOrder((o) => (o === 'desc' ? 'asc' : 'desc'))}
+            aria-label={sortOrder === 'desc' ? 'Sort newest first (click for oldest first)' : 'Sort oldest first (click for newest first)'}
+            title={sortOrder === 'desc' ? 'Newest first' : 'Oldest first'}
+            className={headerNavButtonClass}
+          >
+            <Icon
+              src={sortOrder === 'desc' ? hourglassDownIcon : hourglassUpIcon}
+              className="w-6 h-6 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200"
+            />
+          </button>
+
+          <TimelineFilters
+            tagList={tagList}
+            selectedTagIds={selectedTagIds}
+            toggleTag={toggleTag}
+            minYear={minYear}
+            maxYear={maxYear}
+            effectiveStartYear={effectiveStartYear}
+            effectiveEndYear={effectiveEndYear}
+            onStartYearChange={handleStartYearChange}
+            onEndYearChange={handleEndYearChange}
+            filtersOpen={filtersOpen}
+            setFiltersOpen={setFiltersOpen}
+            filtersRef={filtersRef}
+          >
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((o) => !o)}
+              aria-expanded={filtersOpen}
+              aria-haspopup="dialog"
+              aria-label="Open filters"
+              className={headerNavButtonClass}
+            >
+              <Icon
+                src={hasFilters ? filterListIcon : filterListOffIcon}
+                className="w-6 h-6 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200"
+              />
+            </button>
+          </TimelineFilters>
         </nav>
       </header>
-      <main id="main-content" className="flex-1 min-h-0 flex flex-col" role="main">
-        <TimeLine data={times} schoolStartDate={useSchoolYears ? schoolStartDate : null} />
+
+      {/* FAB: Create (Todate / Tag) — all screen sizes */}
+      <div ref={fabRef} className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-30 flex flex-col items-end gap-3">
+        {fabOpen && (
+          <div className="flex flex-col sm:flex-row-reverse gap-2 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setFabOpen(false);
+                toggleTodateModal();
+              }}
+              aria-label="Create new todate"
+              className={fabSubButtonClass}
+            >
+              <Icon src={starIcon} className="w-5 h-5 text-gray-800 dark:text-gray-200" />
+              <span className="text-sm font-medium">Todate</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFabOpen(false);
+                toggleTagModal();
+              }}
+              aria-label="Create new tag"
+              className={fabSubButtonClass}
+            >
+              <Icon src={tagIcon} className="w-5 h-5 text-gray-800 dark:text-gray-200" />
+              <span className="text-sm font-medium">Tag</span>
+            </button>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setFabOpen((o) => !o)}
+          aria-expanded={fabOpen}
+          aria-label={fabOpen ? 'Close create menu' : 'Create todate or tag'}
+          className={fabMainButtonClass}
+          style={{ transform: fabOpen ? 'rotate(45deg)' : undefined }}
+        >
+          <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="currentColor" viewBox="0 -960 960 960" aria-hidden>
+            <path d="M440-280h80v-160h160v-80H520v-160h-80v160H280v80h160v160Z" />
+          </svg>
+        </button>
+      </div>
+
+      <main id="main-content" className="flex-1 min-h-0 flex flex-col bg-stone-100 dark:bg-gray-800" role="main">
+        <TodateLine
+          list={filteredAndSorted}
+          totalCount={totalCount}
+          schoolStartDate={schoolStartDate}
+          onEditTodate={openEditTodate}
+        />
       </main>
-      {isTimeFormModalOpen &&
-        createPortal(<Modal title="Create an Event" closeFn={toggleTimeModal}><TimeForm tags={tags} addTime={addTime} toggleTagModal={toggleTagModal} schoolStartDate={schoolStartDate} useSchoolYears={useSchoolYears} /></Modal>, document.body)}
+
+      {isTodateFormModalOpen &&
+        createPortal(
+          <Modal title={editingTodate ? 'Edit Todate' : 'Create a Todate'} closeFn={toggleTodateModal}>
+            <TodateForm
+              tags={tags}
+              addTodate={addTodate}
+              updateTodate={updateTodate}
+              initialData={editingTodate ?? undefined}
+              toggleTagModal={toggleTagModal}
+              onEditTag={openEditTag}
+              schoolStartDate={schoolStartDate}
+              setSchoolStartDate={setSchoolStartDate}
+            />
+          </Modal>,
+          document.body
+        )}
       {isTagFormModalOpen &&
-        createPortal(<Modal title="Create a Tag" closeFn={toggleTagModal}><TagForm addTag={addTag} /></Modal>, document.body)}
+        createPortal(
+          <Modal title={editingTag ? 'Edit Tag' : 'Create a Tag'} closeFn={toggleTagModal}>
+            <TagForm
+              key={editingTag?._id ?? 'create'}
+              addTag={addTag}
+              updateTag={updateTag}
+              initialTag={editingTag ?? undefined}
+            />
+          </Modal>,
+          document.body
+        )}
     </>
   );
 }
 
 export default App;
-

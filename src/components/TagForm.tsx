@@ -1,16 +1,24 @@
 import { useState } from "react";
 import type { TagType } from '../types';
 
-const TagForm = ({ addTag }: { addTag: (t: TagType) => void }) => {
-  const [name, setName] = useState('');
-  const [color, setColor] = useState('#000000');
+interface TagFormProps {
+  addTag: (t: TagType) => void;
+  initialTag?: TagType | null;
+  updateTag?: (t: TagType) => void;
+}
 
-  function handleSubmit(e: React.SubmitEvent) {
+const TagForm = ({ addTag, initialTag, updateTag }: TagFormProps) => {
+  const [name, setName] = useState(initialTag?.name ?? '');
+  const [color, setColor] = useState(initialTag?.color ?? '#000000');
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const id = crypto.randomUUID();
-    const data: TagType = { name, color,  _id: id };
-    addTag(data);
-  };
+    if (updateTag && initialTag) {
+      updateTag({ _id: initialTag._id, name, color });
+    } else {
+      addTag({ name, color, _id: crypto.randomUUID() });
+    }
+  }
 
   return (
     <form
@@ -20,7 +28,7 @@ const TagForm = ({ addTag }: { addTag: (t: TagType) => void }) => {
     >
       {/* Title - Required */}
       <div className="w-11/12 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-2">
-        <label htmlFor="tag-name" className="text-sm sm:text-base font-bold text-gray-700 shrink-0">
+        <label htmlFor="tag-name" className="text-sm sm:text-base font-bold text-gray-700 dark:text-gray-300 shrink-0">
           Name
         </label>
         <input
@@ -28,14 +36,14 @@ const TagForm = ({ addTag }: { addTag: (t: TagType) => void }) => {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 invalid:border-red-500"
+          className="flex-1 min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none invalid:border-red-500"
           placeholder="Enter tag name"
           required
           aria-required="true"
           autoComplete="off"
         />
         <div className="flex flex-row items-center gap-2">
-          <label htmlFor="tag-color" className="text-sm sm:text-base font-bold text-gray-700 shrink-0">
+          <label htmlFor="tag-color" className="text-sm sm:text-base font-bold text-gray-700 dark:text-gray-300 shrink-0">
             Color
           </label>
           <input
@@ -44,7 +52,7 @@ const TagForm = ({ addTag }: { addTag: (t: TagType) => void }) => {
             value={color}
             onChange={(e) => setColor(e.target.value)}
             onInput={(e) => setColor(e.currentTarget.value)}
-            className="h-10 w-10 min-w-10 cursor-pointer rounded border border-gray-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            className="h-10 w-10 min-w-10 cursor-pointer rounded border border-gray-300 dark:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
             required
             aria-required="true"
             aria-label="Tag color"
@@ -55,9 +63,9 @@ const TagForm = ({ addTag }: { addTag: (t: TagType) => void }) => {
       {/* Submit Button */}
       <button
         type="submit"
-        className="w-full sm:w-auto sm:min-w-[140px] min-h-[44px] bg-blue-600 hover:bg-blue-700 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-2 text-white font-medium py-2 px-4 rounded-lg transition-colors touch-manipulation"
+        className="w-full sm:w-auto sm:min-w-[140px] min-h-[44px] bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-2 text-white font-medium py-2 px-4 rounded-lg transition-colors touch-manipulation"
       >
-        Save Tag
+        {initialTag ? "Update Tag" : "Save Tag"}
       </button>
     </form>
   );

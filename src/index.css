@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+/* Class-based dark mode (add .dark to a parent, e.g. #root) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer components {
+  .icon-svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+    flex-shrink: 0;
+    vertical-align: middle;
+  }
+
+  .dark .icon-svg {
+    fill: #e5e7eb;
+  }
+}
+
 #root {
   display: flex;
   flex-direction: column;
