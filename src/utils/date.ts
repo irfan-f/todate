@@ -1,20 +1,62 @@
-import type { DateValue, SchoolStartDate } from '../types';
+import type { DateValue, SchoolStartDate, SchoolPeriodType } from '../types';
+
+/** Months per period for each division type (quarter=3, trimester=4, semester=6). */
+const MONTHS_PER_PERIOD: Record<SchoolPeriodType, number> = {
+  quarter: 3,
+  trimester: 4,
+  semester: 6,
+};
 
 /**
- * Converts a school year + quarter to an approximate calendar date using the school start date.
- * Year N starts at (referenceYear + N - 1), month/day from school start.
- * Quarter Q is the (Q-1)*3 month offset from the start of that school year.
+ * Calendar year offset for school year N, accounting for repeated grades, gap years, and skipped grades.
+ * repeatedInstance: when N is repeated, 1 = first time, 2 = second time (adds 0 or 1 extra year).
+ */
+function schoolYearToCalendarYearOffset(
+  schoolYear: number,
+  schoolStart: SchoolStartDate,
+  repeatedInstance?: number
+): number {
+  const repeated = schoolStart.repeatedGrades ?? [];
+  const gaps = schoolStart.gapYears ?? [];
+  const skipped = schoolStart.skippedGrades ?? [];
+  let offset = schoolYear - 1;
+  for (let i = 1; i < schoolYear; i++) {
+    if (repeated.includes(i)) offset += 1;
+    if (skipped.includes(i)) offset -= 1;
+    if (gaps.includes(i)) offset += 1;
+  }
+  if (repeated.includes(schoolYear) && repeatedInstance != null && repeatedInstance > 1) {
+    offset += repeatedInstance - 1;
+  }
+  return offset;
+}
+
+/**
+ * Converts a school year + period to an approximate calendar date using the school start date.
+ * Accounts for repeated grades, gap years, and skipped grades when resolving calendar year.
  */
 function schoolToIso(
   schoolYear: number,
-  quarter: 1 | 2 | 3 | 4,
-  schoolStart: SchoolStartDate
+  periodType: SchoolPeriodType,
+  period: number,
+  schoolStart: SchoolStartDate,
+  repeatedInstance?: number
 ): string {
-  const year = schoolStart.referenceYear + (schoolYear - 1);
+  const offset = schoolYearToCalendarYearOffset(schoolYear, schoolStart, repeatedInstance);
+  const year = schoolStart.referenceYear + offset;
   const startMonth = (schoolStart.month ?? 9) - 1; // 0-indexed
-  const quarterMonthOffset = (quarter - 1) * 3;
-  const d = new Date(year, startMonth + quarterMonthOffset, schoolStart.day ?? 1, 12, 0, 0);
+  const monthsPer = MONTHS_PER_PERIOD[periodType];
+  const monthOffset = (period - 1) * monthsPer;
+  const d = new Date(year, startMonth + monthOffset, schoolStart.day ?? 1, 12, 0, 0);
   return d.toISOString();
+}
+
+function getSchoolPeriod(dv: Extract<DateValue, { kind: 'school' }>): { periodType: SchoolPeriodType; period: number } {
+  if (dv.periodType != null && dv.period != null) {
+    return { periodType: dv.periodType, period: dv.period };
+  }
+  const quarter = dv.quarter ?? 1;
+  return { periodType: 'quarter', period: Math.max(1, Math.min(4, quarter)) };
 }
 
 /**
@@ -26,15 +68,15 @@ export function dateValueToIso(
 ): string {
   switch (dateValue.kind) {
     case 'school': {
-      if (!schoolStart) {
-        // Fallback: use reference year 2000 so "Year 1 Q1" still sorts
-        return schoolToIso(dateValue.schoolYear, dateValue.quarter, {
-          referenceYear: 2000,
-          month: 9,
-          day: 1,
-        });
-      }
-      return schoolToIso(dateValue.schoolYear, dateValue.quarter, schoolStart);
+      const { periodType, period } = getSchoolPeriod(dateValue);
+      const fallback: SchoolStartDate = { referenceYear: 2000, month: 9, day: 1 };
+      return schoolToIso(
+        dateValue.schoolYear,
+        periodType,
+        period,
+        schoolStart ?? fallback,
+        dateValue.repeatedInstance
+      );
     }
     case 'month':
       return new Date(dateValue.year, dateValue.month - 1, 15, 12, 0, 0).toISOString();
@@ -55,19 +97,23 @@ export function dateValueToIso(
 }
 
 /**
- * Returns the calendar date range for a school year and quarter (e.g. Year 1 Q1 → Sep–Nov 2000).
- * Year N starts at (referenceYear + N - 1), month/day from school start; each quarter is 3 months.
+ * Returns the calendar date range for a school year and period (e.g. Year 1 Q1 → Sep–Nov 2000).
+ * Accounts for repeated/gap/skipped grades when resolving calendar year.
  */
-export function schoolQuarterToCalendarRange(
+export function schoolPeriodToCalendarRange(
   schoolYear: number,
-  quarter: 1 | 2 | 3 | 4,
-  schoolStart: SchoolStartDate
+  periodType: SchoolPeriodType,
+  period: number,
+  schoolStart: SchoolStartDate,
+  repeatedInstance?: number
 ): { start: Date; end: Date } {
-  const year = schoolStart.referenceYear + (schoolYear - 1);
-  const startMonth0 = (schoolStart.month ?? 9) - 1 + (quarter - 1) * 3;
+  const offset = schoolYearToCalendarYearOffset(schoolYear, schoolStart, repeatedInstance);
+  const year = schoolStart.referenceYear + offset;
+  const monthsPer = MONTHS_PER_PERIOD[periodType];
+  const startMonth0 = (schoolStart.month ?? 9) - 1 + (period - 1) * monthsPer;
   const start = new Date(year, startMonth0, schoolStart.day ?? 1, 0, 0, 0);
   const end = new Date(start);
-  end.setMonth(end.getMonth() + 3);
+  end.setMonth(end.getMonth() + monthsPer);
   end.setDate(end.getDate() - 1);
   return { start, end };
 }
@@ -91,11 +137,20 @@ export function formatDateDisplay(
 
   switch (dateValue.kind) {
     case 'school': {
+      const { periodType, period } = getSchoolPeriod(dateValue);
+      const periodLabel =
+        periodType === 'quarter'
+          ? `Q${period}`
+          : periodType === 'trimester'
+            ? `Tri ${period}`
+            : `Sem ${period}`;
       if (schoolStart) {
-        const { start, end } = schoolQuarterToCalendarRange(
+        const { start, end } = schoolPeriodToCalendarRange(
           dateValue.schoolYear,
-          dateValue.quarter,
-          schoolStart
+          periodType,
+          period,
+          schoolStart,
+          dateValue.repeatedInstance
         );
         const startStr = start.toLocaleDateString(locale, {
           month: 'short',
@@ -110,7 +165,7 @@ export function formatDateDisplay(
           ? `${label} (${dateValue.schoolYearNote.trim()})`
           : label;
       }
-      let label = `Year ${dateValue.schoolYear}, Q${dateValue.quarter}`;
+      let label = `Year ${dateValue.schoolYear}, ${periodLabel}`;
       if (dateValue.schoolYearNote?.trim()) {
         label += ` (${dateValue.schoolYearNote.trim()})`;
       }

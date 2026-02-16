@@ -5,6 +5,7 @@ import type {
   TagsType,
   DateValue,
   SchoolStartDate,
+  SchoolPeriodType,
 } from "../types";
 import { dateValueToIso, isoToDatetimeLocal } from "../utils/date";
 import NewButton from "./NewButton";
@@ -15,9 +16,17 @@ import tagIcon from "../assets/tag.svg?raw";
 type DateTab = 'school' | 'calendar';
 
 const DATE_TABS: { value: DateTab; label: string }[] = [
-  { value: "school", label: "School year & quarter" },
-  { value: "calendar", label: "Year / Month / Day / Time" },
+  { value: "school", label: "School year" },
+  { value: "calendar", label: "Date" },
 ];
+
+function periodCount(type: SchoolPeriodType): number {
+  return type === "quarter" ? 4 : type === "trimester" ? 3 : 2;
+}
+
+function periodLabel(type: SchoolPeriodType, n: number): string {
+  return type === "quarter" ? `Q${n}` : type === "trimester" ? `Tri ${n}` : `Sem ${n}`;
+}
 
 const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -35,7 +44,6 @@ interface TodateFormProps {
   toggleTagModal: () => void;
   onEditTag?: (tag: TagType) => void;
   schoolStartDate: SchoolStartDate | null;
-  setSchoolStartDate: (s: SchoolStartDate) => void;
 }
 
 const currentYear = new Date().getFullYear();
@@ -48,7 +56,6 @@ const TodateForm = ({
   toggleTagModal,
   onEditTag,
   schoolStartDate,
-  setSchoolStartDate,
 }: TodateFormProps) => {
   const [title, setTitle] = useState("");
   const [dateTab, setDateTab] = useState<DateTab>(() =>
@@ -56,11 +63,11 @@ const TodateForm = ({
   );
   const [comment, setComment] = useState("");
   const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
-  const [tagError, setTagError] = useState("");
 
-  // School
+  // School (periodType from schoolStartDate; Grade = schoolYear, Unit = period + optional repeatedInstance)
   const [schoolYear, setSchoolYear] = useState<number>(1);
-  const [quarter, setQuarter] = useState<1 | 2 | 3 | 4>(1);
+  const [period, setPeriod] = useState<number>(1);
+  const [repeatedInstance, setRepeatedInstance] = useState<number | undefined>(undefined);
 
   // Calendar: year required; month/day optional (0 = not set); time only when day set
   const [year, setYear] = useState<number>(new Date().getFullYear());
@@ -78,7 +85,9 @@ const TodateForm = ({
       if (dv.kind === "school") {
         setDateTab("school");
         setSchoolYear(dv.schoolYear);
-        setQuarter(dv.quarter);
+        const p = dv.period ?? (dv.quarter ?? 1);
+        setPeriod(p);
+        setRepeatedInstance(dv.repeatedInstance);
       } else {
         setDateTab("calendar");
         if (dv.kind === "month") {
@@ -114,8 +123,37 @@ const TodateForm = ({
     setSelectedTags((prev) => prev.map((t) => tags[t._id] ?? t));
   }, [tags]);
 
+  // Sync period/repeatedInstance when grade or school data changes so selection stays valid
+  const pt = schoolStartDate?.periodType ?? "quarter";
+  const skipped = schoolStartDate?.skippedGrades ?? [];
+  const repeated = schoolStartDate?.repeatedGrades ?? [];
+  const maxP = periodCount(pt);
+  const gradeSkipped = skipped.includes(schoolYear);
+  const gradeRepeated = repeated.includes(schoolYear);
+  useEffect(() => {
+    if (dateTab !== "school") return;
+    if (gradeSkipped) {
+      setPeriod(1);
+      setRepeatedInstance(undefined);
+      return;
+    }
+    if (gradeRepeated) {
+      const valid = (period >= 1 && period <= maxP && (repeatedInstance === undefined || repeatedInstance === 1 || repeatedInstance === 2));
+      if (!valid) {
+        setPeriod(1);
+        setRepeatedInstance(1);
+      }
+      return;
+    }
+    if (period < 1 || period > maxP) {
+      setPeriod(1);
+      setRepeatedInstance(undefined);
+    } else if (repeatedInstance != null) {
+      setRepeatedInstance(undefined);
+    }
+  }, [dateTab, schoolYear, gradeSkipped, gradeRepeated, maxP, period, repeatedInstance]);
+
   const toggleTag = (tag: TagType) => {
-    setTagError("");
     setSelectedTags((prev) =>
       prev.some((t) => t._id === tag._id)
         ? prev.filter((t) => t._id !== tag._id)
@@ -129,10 +167,14 @@ const TodateForm = ({
 
   function buildDateValue(): DateValue | null {
     if (dateTab === "school") {
+      const pt = schoolStartDate?.periodType ?? "quarter";
+      const maxP = periodCount(pt);
       return {
         kind: "school",
         schoolYear: Math.max(1, Math.floor(schoolYear) || 1),
-        quarter,
+        periodType: pt,
+        period: Math.max(1, Math.min(maxP, Math.floor(period) || 1)),
+        ...(repeatedInstance != null && repeatedInstance > 1 ? { repeatedInstance } : {}),
       };
     }
     // Calendar tab: year required; month/day/time optional
@@ -153,16 +195,11 @@ const TodateForm = ({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setTagError("");
-    if (selectedTags.length === 0) {
-      setTagError("Please select at least one tag.");
-      return;
-    }
     const dateValue = buildDateValue();
     if (!dateValue) return;
     const iso = dateValueToIso(
       dateValue,
-      dateTab === "school" ? schoolStartDate ?? { referenceYear: currentYear, month: 9, day: 1 } : undefined
+      dateTab === "school" ? schoolStartDate ?? { referenceYear: currentYear, month: 9, day: 1, periodType: "quarter" } : undefined
     );
     const id = initialData?._id ?? crypto.randomUUID();
     const data: TodateType = {
@@ -207,7 +244,7 @@ const TodateForm = ({
         />
       </div>
 
-      {/* Date format: two tabs — School or Calendar (year → month → day → time) */}
+      {/* Date format: two tabs — School year or Date (full-width tabs on small screens) */}
       <div className="w-11/12" role="group" aria-labelledby="date-format-label">
         <p id="date-format-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           When did this happen?
@@ -229,7 +266,7 @@ const TodateForm = ({
                 id={`tab-${opt.value}`}
                 tabIndex={isSelected ? 0 : -1}
                 onClick={() => setDateTab(opt.value)}
-                className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                className={`flex-1 min-w-0 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
                   isSelected
                     ? "border-blue-600 text-blue-600 dark:text-blue-400"
                     : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-500"
@@ -248,49 +285,83 @@ const TodateForm = ({
               aria-labelledby="tab-school"
               className="flex flex-wrap gap-3 items-center"
             >
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-full">Grade</span>
               <div className="flex flex-wrap gap-2 items-center">
-                <label className="text-sm text-gray-700 dark:text-gray-300">Student&apos;s first year starts (year)</label>
+                <label htmlFor="todate-grade" className="sr-only">Grade (school year number)</label>
                 <input
-                  type="number"
-                  min={1990}
-                  max={currentYear + 20}
-                  value={schoolStartDate?.referenceYear ?? ""}
-                  onChange={(e) => {
-                    const val = Number(e.target.value) || currentYear;
-                    setSchoolStartDate({
-                      referenceYear: val,
-                      month: schoolStartDate?.month ?? 9,
-                      day: schoolStartDate?.day ?? 1,
-                    });
-                  }}
-                  placeholder={String(currentYear)}
-                  className={`w-20 px-2 py-2 ${INPUT_CLASS}`}
-                  aria-label="First year start year"
-                />
-              </div>
-              <div className="flex flex-wrap gap-2 items-center">
-                <label className="text-sm text-gray-700 dark:text-gray-300">School year</label>
-                <input
+                  id="todate-grade"
                   type="number"
                   min={1}
                   max={30}
                   value={schoolYear}
-                  onChange={(e) => setSchoolYear(Math.max(1, Number(e.target.value) || 1))}
+                  onChange={(e) => {
+                    const v = Math.max(1, Number(e.target.value) || 1);
+                    setSchoolYear(v);
+                    const skipped = schoolStartDate?.skippedGrades ?? [];
+                    if (skipped.includes(v)) {
+                      setPeriod(1);
+                      setRepeatedInstance(undefined);
+                    }
+                  }}
                   className={`w-16 px-2 py-2 ${INPUT_CLASS}`}
-                  aria-label="School year number"
+                  aria-label="Grade (school year number)"
                 />
               </div>
-              <label className="text-sm text-gray-700 dark:text-gray-300">Quarter</label>
-              <select
-                value={quarter}
-                onChange={(e) => setQuarter(Number(e.target.value) as 1 | 2 | 3 | 4)}
-                className={`px-3 py-2 ${INPUT_CLASS}`}
-                aria-label="Quarter (1–4)"
-              >
-                {([1, 2, 3, 4] as const).map((q) => (
-                  <option key={q} value={q}>Q{q}</option>
-                ))}
-              </select>
+              {(() => {
+                const pt = schoolStartDate?.periodType ?? "quarter";
+                const skipped = schoolStartDate?.skippedGrades ?? [];
+                const repeated = schoolStartDate?.repeatedGrades ?? [];
+                const maxP = periodCount(pt);
+                const gradeSkipped = skipped.includes(schoolYear);
+                const gradeRepeated = repeated.includes(schoolYear);
+                const options: { period: number; repeatedInstance?: number; label: string }[] = [];
+                if (gradeSkipped) {
+                  // show none
+                } else if (gradeRepeated) {
+                  Array.from({ length: maxP }, (_, i) => i + 1).forEach((n) =>
+                    options.push({ period: n, repeatedInstance: 1, label: periodLabel(pt, n) })
+                  );
+                  Array.from({ length: maxP }, (_, i) => i + 1).forEach((n) =>
+                    options.push({ period: n, repeatedInstance: 2, label: `${periodLabel(pt, n)} (2nd)` })
+                  );
+                } else {
+                  Array.from({ length: maxP }, (_, i) => i + 1).forEach((n) =>
+                    options.push({ period: n, label: periodLabel(pt, n) })
+                  );
+                }
+                const currentOpt = options.find(
+                  (o) => o.period === period && (o.repeatedInstance ?? 1) === (repeatedInstance ?? 1)
+                );
+                const valueStr = currentOpt
+                  ? `${currentOpt.period}-${currentOpt.repeatedInstance ?? 1}`
+                  : options[0] ? `${options[0].period}-${options[0].repeatedInstance ?? 1}` : "";
+                return (
+                  <>
+                    <label htmlFor="todate-unit" className="text-sm text-gray-700 dark:text-gray-300">
+                      Unit
+                    </label>
+                    <select
+                      id="todate-unit"
+                      value={valueStr}
+                      onChange={(e) => {
+                        const [p, r] = e.target.value.split("-").map(Number);
+                        setPeriod(p);
+                        setRepeatedInstance(r > 1 ? r : undefined);
+                      }}
+                      disabled={gradeSkipped || options.length === 0}
+                      className={`px-3 py-2 ${INPUT_CLASS}`}
+                      aria-label={gradeSkipped ? "No units (grade skipped)" : "Unit (period within grade)"}
+                    >
+                      {options.length === 0 && <option value="">—</option>}
+                      {options.map((o) => (
+                        <option key={`${o.period}-${o.repeatedInstance ?? 1}`} value={`${o.period}-${o.repeatedInstance ?? 1}`}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                );
+              })()}
             </div>
           )}
 
@@ -396,7 +467,7 @@ const TodateForm = ({
       <div className="w-11/12">
         <div className="flex flex-row items-center justify-between gap-2 mb-1 shrink-0">
           <span id="tags-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Tags <span className="text-red-600" aria-hidden>*</span>
+            Tags <span className="text-gray-500 dark:text-gray-400 text-xs">(optional)</span>
           </span>
           <NewButton className="w-fit h-fit" name="Tag" action={toggleTagModal} ariaLabel="Create new tag" icon={tagIcon} />
         </div>
@@ -404,38 +475,29 @@ const TodateForm = ({
           The todate card uses the first tag&apos;s color. Multiple tags are supported for filtering.
         </p>
         <div
-          className={`relative border rounded-lg p-2 min-h-12 max-h-40 overflow-y-auto bg-white dark:bg-gray-800 ${tagError ? "border-red-500" : "border-gray-300 dark:border-gray-500"}`}
+          className="relative border rounded-lg p-2 min-h-12 max-h-40 overflow-y-auto bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-500"
           role="listbox"
           aria-labelledby="tags-label"
-          aria-required="true"
-          aria-invalid={!!tagError}
-          aria-errormessage={tagError ? "tags-error" : undefined}
           aria-multiselectable
-          aria-label="Available tags; click to toggle selection (at least one required)"
+          aria-label="Available tags; click to toggle selection"
           aria-describedby="tags-hint"
         >
           {tagIds.length === 0 ? (
             <p className="text-sm text-gray-500 py-2 w-fit" role="status">
-              No tags yet. Create one first.
+              No tags yet. Create one or save without tags.
             </p>
           ) : (
             tagIds.map((tagId) => {
               const tag = tags[tagId];
               const isSelected = selectedTags.some((t) => t._id === tag._id);
               return (
-                <div
+                <button
                   key={tag._id}
+                  type="button"
                   role="option"
                   aria-selected={isSelected}
-                  tabIndex={0}
                   onClick={() => toggleTag(tag)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      toggleTag(tag);
-                    }
-                  }}
-                  className={`cursor-pointer px-3 py-2 rounded text-sm flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-inset touch-manipulation text-gray-900 dark:text-gray-100 ${
+                  className={`w-full text-left cursor-pointer px-3 py-2 rounded text-sm flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-inset touch-manipulation text-gray-900 dark:text-gray-100 ${
                     isSelected ? "bg-gray-200 dark:bg-gray-600" : ""
                   }`}
                 >
@@ -446,28 +508,32 @@ const TodateForm = ({
                   />
                   <span className="flex-1 min-w-0 truncate">{tag.name}</span>
                   {onEditTag ? (
-                    <button
-                      type="button"
+                    <span
+                      role="button"
+                      tabIndex={0}
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         onEditTag(tag);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onEditTag(tag);
+                        }
                       }}
                       className="shrink-0 min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer text-gray-600 dark:text-gray-400 touch-manipulation"
                       aria-label={`Edit ${tag.name}`}
                     >
                       <Icon src={editIcon} className="w-4 h-4" />
-                    </button>
+                    </span>
                   ) : null}
-                </div>
+                </button>
               );
             })
           )}
         </div>
-        {tagError ? (
-          <p id="tags-error" className="mt-1 text-sm text-red-600" role="alert">
-            {tagError}
-          </p>
-        ) : null}
       </div>
       {selectedTags.length > 0 ? (
         <div

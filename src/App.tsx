@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { TodateType, TodatesType, TagType, TagsType, SchoolStartDate } from './types';
 import TodateForm from './components/TodateForm';
 import TagForm from './components/TagForm';
+import SchoolDataForm from './components/SchoolDataForm';
 import TodateLine from './components/TodateLine';
 import Modal from './components/Modal';
 import Icon from './components/Icon';
@@ -13,9 +14,10 @@ import hourglassUpIcon from './assets/hourglass_up.svg?raw';
 import hourglassDownIcon from './assets/hourglass_down.svg?raw';
 import starIcon from './assets/star.svg?raw';
 import tagIcon from './assets/tag.svg?raw';
+import schoolIcon from './assets/school.svg?raw';
 import { useTheme } from './hooks/useTheme';
 import ThemeToggle from './components/ThemeToggle';
-import { headerNavButtonClass, fabSubButtonClass, fabMainButtonClass } from './constants/ui';
+import { headerNavButtonClass, fabSubButtonClass, fabMainButtonClass, fabSettingsButtonClass } from './constants/ui';
 
 function getYearFromTodate(todate: TodateType): number {
   return new Date(todate.date).getFullYear();
@@ -49,19 +51,20 @@ function App() {
   }, [todatesList]);
 
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [showUntagged, setShowUntagged] = useState(true);
   const [startYear, setStartYear] = useState(minYear);
   const [endYear, setEndYear] = useState(maxYear);
   const [yearFilterTouched, setYearFilterTouched] = useState(false);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
+  const [isSchoolDataModalOpen, setIsSchoolDataModalOpen] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
-  const fabRef = useRef<HTMLDivElement>(null);
+  const fabAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!fabOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (fabRef.current && !fabRef.current.contains(e.target as Node)) {
+      if (fabAreaRef.current && !fabAreaRef.current.contains(e.target as Node)) {
         setFabOpen(false);
       }
     };
@@ -92,16 +95,19 @@ function App() {
         todate.tags.some((t) => selectedTagIds.includes(t._id))
       );
     }
+    if (!showUntagged) {
+      list = list.filter((todate) => todate.tags.length > 0);
+    }
     list = list.filter((todate) => {
       const y = getYearFromTodate(todate);
       return y >= effectiveStartYear && y <= effectiveEndYear;
     });
     return [...list].sort((a, b) => sortByTodate(a, b, sortOrder));
-  }, [todatesList, selectedTagIds, effectiveStartYear, effectiveEndYear, sortOrder]);
+  }, [todatesList, selectedTagIds, showUntagged, effectiveStartYear, effectiveEndYear, sortOrder]);
 
   const tagList = useMemo(() => Object.values(tags), [tags]);
 
-  const hasFilters = selectedTagIds.length > 0 || yearFilterTouched;
+  const hasFilters = selectedTagIds.length > 0 || !showUntagged || yearFilterTouched;
 
   const toggleTag = (tagId: string) => {
     setSelectedTagIds((prev) =>
@@ -128,6 +134,15 @@ function App() {
   function openEditTag(tag: TagType): void {
     setEditingTag(tag);
     setIsTagFormModalOpen(true);
+  }
+
+  function toggleSchoolDataModal(): void {
+    setIsSchoolDataModalOpen((open) => !open);
+  }
+
+  function handleSaveSchoolData(data: SchoolStartDate): void {
+    setSchoolStartDate(data);
+    setIsSchoolDataModalOpen(false);
   }
 
   function addTodate(todateToAdd: TodateType): void {
@@ -189,6 +204,8 @@ function App() {
             tagList={tagList}
             selectedTagIds={selectedTagIds}
             toggleTag={toggleTag}
+            showUntagged={showUntagged}
+            onShowUntaggedChange={setShowUntagged}
             minYear={minYear}
             maxYear={maxYear}
             effectiveStartYear={effectiveStartYear}
@@ -204,6 +221,7 @@ function App() {
               onClick={() => setFiltersOpen((o) => !o)}
               aria-expanded={filtersOpen}
               aria-haspopup="dialog"
+              aria-controls={filtersOpen ? 'filters-panel' : undefined}
               aria-label="Open filters"
               className={headerNavButtonClass}
             >
@@ -216,10 +234,24 @@ function App() {
         </nav>
       </header>
 
-      {/* FAB: Create (Todate / Tag) — all screen sizes */}
-      <div ref={fabRef} className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-30 flex flex-col items-end gap-3">
-        {fabOpen && (
-          <div className="flex flex-col sm:flex-row-reverse gap-2 sm:gap-2">
+      {/* FAB area: Settings (minifab) + Create — adjacent, settings smaller */}
+      <div
+        ref={fabAreaRef}
+        className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-30 flex flex-row items-end gap-2 sm:gap-3"
+      >
+        {/* School FAB: opens school data modal */}
+        <button
+          type="button"
+          onClick={toggleSchoolDataModal}
+          aria-label="School data"
+          className={fabSettingsButtonClass}
+        >
+          <Icon src={schoolIcon} className="w-5 h-5 sm:w-6 sm:h-6" />
+        </button>
+        {/* Create FAB column */}
+        <div className="flex flex-col items-end gap-2 sm:gap-3">
+          {fabOpen && (
+            <div className="flex flex-col sm:flex-row-reverse gap-2">
             <button
               type="button"
               onClick={() => {
@@ -258,6 +290,7 @@ function App() {
             <path d="M440-280h80v-160h160v-80H520v-160h-80v160H280v80h160v160Z" />
           </svg>
         </button>
+        </div>
       </div>
 
       <main id="main-content" className="flex-1 min-h-0 flex flex-col bg-stone-100 dark:bg-gray-800" role="main">
@@ -280,7 +313,6 @@ function App() {
               toggleTagModal={toggleTagModal}
               onEditTag={openEditTag}
               schoolStartDate={schoolStartDate}
-              setSchoolStartDate={setSchoolStartDate}
             />
           </Modal>,
           document.body
@@ -293,6 +325,20 @@ function App() {
               addTag={addTag}
               updateTag={updateTag}
               initialTag={editingTag ?? undefined}
+            />
+          </Modal>,
+          document.body
+        )}
+      {isSchoolDataModalOpen &&
+        createPortal(
+          <Modal
+            title={schoolStartDate ? 'Edit school data' : 'School data'}
+            closeFn={toggleSchoolDataModal}
+          >
+            <SchoolDataForm
+              key={schoolStartDate ? `edit-${schoolStartDate.referenceYear}-${schoolStartDate.month ?? 0}` : 'create'}
+              initialData={schoolStartDate}
+              onSave={handleSaveSchoolData}
             />
           </Modal>,
           document.body

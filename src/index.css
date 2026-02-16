@@ -17,6 +17,15 @@
   }
 }
 
+/* Prevent iOS from auto-zooming when focusing inputs (16px is the zoom threshold) */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 #root {
   display: flex;
   flex-direction: column;
