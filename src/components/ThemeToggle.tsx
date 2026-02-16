@@ -30,13 +30,17 @@ export default function ThemeToggle({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
+  const listboxId = 'theme-listbox';
+
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
+        id="theme-toggle"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-controls={open ? listboxId : undefined}
         aria-label="Theme"
         title={`Theme: ${LABELS[theme]}`}
         className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded bg-gray-400 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-600 dark:focus-visible:ring-gray-400 transition-colors touch-manipulation"
@@ -44,12 +48,14 @@ export default function ThemeToggle({
         <Icon
           src={theme === 'light' ? lightModeIcon : theme === 'dark' ? darkModeIcon : defaultModeIcon}
           className="w-6 h-6 sm:w-5 sm:h-5"
+          aria-hidden
         />
       </button>
       {open && (
         <div
+          id={listboxId}
           role="listbox"
-          aria-label="Theme"
+          aria-label="Theme options"
           className="absolute right-0 top-full mt-1 py-1 min-w-32 rounded-lg bg-stone-50 dark:bg-gray-700 border border-stone-200 dark:border-gray-600 shadow-lg z-50"
         >
           {(['light', 'dark', 'system'] as const).map((t) => (
