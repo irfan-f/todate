@@ -27,15 +27,17 @@ function App() {
   const [tags, setTags] = useState<TagsType>({});
   const [schoolStartDate, setSchoolStartDate] = useState<SchoolStartDate | null>(null);
 
-  // Load sample data only in dev when VITE_SAMPLE_DATA is set (npm run dev:sample)
+  // Load sample data only in dev when VITE_SAMPLE_DATA is set (npm run dev:sample).
+  // sampleData.ts is gitignored and may not exist — suppress module resolution.
   const [sampleLoaded, setSampleLoaded] = useState(false);
   useEffect(() => {
     if (sampleLoaded) return;
     if (import.meta.env.DEV && import.meta.env.VITE_SAMPLE_DATA === 'true') {
+      // @ts-ignore — optional dev-only file, not present in CI/production
       import(/* @vite-ignore */ '../sampleData').then((mod) => {
-        setTodates(mod.sampleTodates);
-        setTags(mod.sampleTags);
-        setSchoolStartDate(mod.sampleSchoolStartDate);
+        setTodates(mod.sampleTodates as TodatesType);
+        setTags(mod.sampleTags as TagsType);
+        setSchoolStartDate(mod.sampleSchoolStartDate as SchoolStartDate);
         setSampleLoaded(true);
       }).catch(() => {
         console.warn('sampleData.ts not found at project root — starting with empty state');
