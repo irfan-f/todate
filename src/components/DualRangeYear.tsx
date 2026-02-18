@@ -143,7 +143,7 @@ export default function DualRangeYear({
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
           onPointerLeave={handlePointerUp}
-          className="absolute z-10 flex items-center justify-center cursor-grab active:cursor-grabbing outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-600 dark:focus-visible:ring-offset-gray-700 rounded-full min-w-[44px] min-h-[44px] sm:min-w-[28px] sm:min-h-[28px] -translate-x-1/2 -translate-y-1/2"
+          className="absolute z-10 flex items-center justify-center cursor-grab active:cursor-grabbing outline-none focus-visible:ring-1 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-400 rounded-full min-w-[44px] min-h-[44px] sm:min-w-[28px] sm:min-h-[28px] -translate-x-1/2 -translate-y-1/2"
           style={{ left: `${lowPct * 100}%`, top: '50%' }}
         >
           <span
@@ -165,7 +165,7 @@ export default function DualRangeYear({
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
           onPointerLeave={handlePointerUp}
-          className="absolute z-20 flex items-center justify-center cursor-grab active:cursor-grabbing outline-none focus-visible:ring-2 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-600 dark:focus-visible:ring-offset-gray-700 rounded-full min-w-[44px] min-h-[44px] sm:min-w-[28px] sm:min-h-[28px] -translate-x-1/2 -translate-y-1/2"
+          className="absolute z-20 flex items-center justify-center cursor-grab active:cursor-grabbing outline-none focus-visible:ring-1 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-400 rounded-full min-w-[44px] min-h-[44px] sm:min-w-[28px] sm:min-h-[28px] -translate-x-1/2 -translate-y-1/2"
           style={{ left: `${highPct * 100}%`, top: '50%' }}
         >
           <span

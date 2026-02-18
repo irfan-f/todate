@@ -31,4 +31,32 @@
   flex-direction: column;
   overflow: hidden;
   height: 100vh;
+  user-select: none;
+  cursor: default;
+}
+
+/* Re-enable text selection and text cursor on user inputs and editable content */
+input,
+select,
+textarea {
+  user-select: text;
+  cursor: text;
+}
+input[type="number"],
+input[type="checkbox"],
+input[type="color"],
+input[type="radio"],
+select {
+  cursor: pointer;
+}
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}
+
+/* Allow selecting user-generated content (todate detail view) */
+.select-text {
+  user-select: text;
+  cursor: text;
 }

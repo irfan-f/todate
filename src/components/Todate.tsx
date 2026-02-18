@@ -34,7 +34,7 @@ const Todate = ({ data, schoolStartDate = null, onEdit }: TodateProps) => {
 
   return (
     <article
-      className="w-full h-full p-4 sm:p-6"
+      className="w-full h-full p-4 sm:p-6 select-text"
       aria-labelledby={`todate-title-${data._id}`}
     >
       {/* Header: title + edit */}
@@ -50,7 +50,7 @@ const Todate = ({ data, schoolStartDate = null, onEdit }: TodateProps) => {
             type="button"
             onClick={() => onEdit(data)}
             aria-label={`Edit todate ${data.title}`}
-            className="ml-auto shrink-0 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 transition-colors touch-manipulation bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 focus-visible:ring-blue-500"
+            className="ml-auto shrink-0 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-full focus:outline-none focus-visible:ring-1 transition-colors touch-manipulation bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 focus-visible:ring-blue-500 cursor-pointer"
           >
             <Icon src={editIcon} className="w-5 h-5" />
           </button>
