@@ -16,8 +16,8 @@ import tagIcon from "../assets/tag.svg?raw";
 type DateTab = 'school' | 'calendar';
 
 const DATE_TABS: { value: DateTab; label: string }[] = [
-  { value: "school", label: "School year" },
   { value: "calendar", label: "Date" },
+  { value: "school", label: "School year" },
 ];
 
 function periodCount(type: SchoolPeriodType): number {
@@ -34,7 +34,7 @@ const MONTHS = [
 ];
 
 const INPUT_CLASS =
-  "border border-gray-300 dark:border-gray-500 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none";
+  "border border-gray-300 dark:border-gray-500 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
 
 interface TodateFormProps {
   tags: TagsType;
@@ -46,6 +46,7 @@ interface TodateFormProps {
   schoolStartDate: SchoolStartDate | null;
   compact?: boolean;
   onAddTag?: (t: TagType) => void;
+  onOpenSchoolData?: () => void;
 }
 
 const currentYear = new Date().getFullYear();
@@ -60,11 +61,10 @@ const TodateForm = ({
   schoolStartDate,
   compact,
   onAddTag,
+  onOpenSchoolData,
 }: TodateFormProps) => {
   const [title, setTitle] = useState("");
-  const [dateTab, setDateTab] = useState<DateTab>(() =>
-    schoolStartDate != null ? "school" : "calendar"
-  );
+  const [dateTab, setDateTab] = useState<DateTab>("calendar");
   const [comment, setComment] = useState("");
   const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
   const [newTagName, setNewTagName] = useState("");
@@ -83,9 +83,7 @@ const TodateForm = ({
 
   // Optional end date (same shape as start: school or calendar)
   const [hasEndDate, setHasEndDate] = useState(false);
-  const [endDateTab, setEndDateTab] = useState<DateTab>(() =>
-    schoolStartDate != null ? "school" : "calendar"
-  );
+  const [endDateTab, setEndDateTab] = useState<DateTab>("calendar");
   const [schoolYearEnd, setSchoolYearEnd] = useState<number>(1);
   const [periodEnd, setPeriodEnd] = useState<number>(1);
   const [repeatedInstanceEnd, setRepeatedInstanceEnd] = useState<number | undefined>(undefined);
@@ -329,15 +327,38 @@ const TodateForm = ({
   const tagIds = Object.keys(tags);
 
   /* ─── shared helpers that render date tab contents ─── */
+
+  const compactRowClass = "flex items-center justify-between gap-2";
+  const compactLabelClass = "text-xs font-medium text-gray-600 dark:text-gray-400 shrink-0 w-10";
+  const compactInputClass = `flex-1 min-w-0 px-2 py-1.5 ${INPUT_CLASS}`;
+
   const schoolPanel = (
     prefix: string,
     grade: number, setGrade: (n: number) => void,
     per: number, setPer: (n: number) => void,
     ri: number | undefined, setRi: (n: number | undefined) => void
   ) => {
-    const pt = schoolStartDate?.periodType ?? "quarter";
-    const skippedG = schoolStartDate?.skippedGrades ?? [];
-    const repeatedG = schoolStartDate?.repeatedGrades ?? [];
+    if (!schoolStartDate) {
+      const placeholder = (
+        <div id={`panel-${prefix}school`} role="tabpanel" aria-labelledby={`tab-${prefix}school`}
+          className={`${compact ? 'h-full' : ''} flex flex-col items-center justify-center gap-2 py-3`}>
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+            School data is not configured yet.
+          </p>
+          {onOpenSchoolData && (
+            <button type="button" onClick={onOpenSchoolData}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer">
+              Set up school data
+            </button>
+          )}
+        </div>
+      );
+      return placeholder;
+    }
+
+    const pt = schoolStartDate.periodType ?? "quarter";
+    const skippedG = schoolStartDate.skippedGrades ?? [];
+    const repeatedG = schoolStartDate.repeatedGrades ?? [];
     const maxPV = periodCount(pt);
     const gradeSkippedV = skippedG.includes(grade);
     const gradeRepeatedV = repeatedG.includes(grade);
@@ -352,17 +373,41 @@ const TodateForm = ({
     }
     const curOpt = options.find((o) => o.period === per && (o.repeatedInstance ?? 1) === (ri ?? 1));
     const valStr = curOpt ? `${curOpt.period}-${curOpt.repeatedInstance ?? 1}` : options[0] ? `${options[0].period}-${options[0].repeatedInstance ?? 1}` : "";
+
+    if (compact) {
+      return (
+        <div id={`panel-${prefix}school`} role="tabpanel" aria-labelledby={`tab-${prefix}school`} className="h-full flex flex-col justify-evenly">
+          <div className={compactRowClass}>
+            <label htmlFor={`${prefix}grade`} className={compactLabelClass}>Grade</label>
+            <input id={`${prefix}grade`} type="number" min={1} max={30} value={grade}
+              onChange={(e) => { const v = Math.max(1, Number(e.target.value) || 1); setGrade(v); if (skippedG.includes(v)) { setPer(1); setRi(undefined); } }}
+              className={compactInputClass} aria-label={`${prefix ? 'End g' : 'G'}rade`} />
+          </div>
+          <div className={compactRowClass}>
+            <label htmlFor={`${prefix}unit`} className={compactLabelClass}>Unit</label>
+            <select id={`${prefix}unit`} value={valStr}
+              onChange={(e) => { const [p, r] = e.target.value.split("-").map(Number); setPer(p); setRi(r > 1 ? r : undefined); }}
+              disabled={gradeSkippedV || options.length === 0}
+              className={compactInputClass} aria-label={gradeSkippedV ? "No units (grade skipped)" : `${prefix ? 'End u' : 'U'}nit`}>
+              {options.length === 0 && <option value="">—</option>}
+              {options.map((o) => <option key={`${o.period}-${o.repeatedInstance ?? 1}`} value={`${o.period}-${o.repeatedInstance ?? 1}`}>{o.label}</option>)}
+            </select>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div id={`panel-${prefix}school`} role="tabpanel" aria-labelledby={`tab-${prefix}school`} className="flex flex-wrap gap-2 items-center">
         <label htmlFor={`${prefix}grade`} className="text-sm text-gray-700 dark:text-gray-300">Grade</label>
         <input id={`${prefix}grade`} type="number" min={1} max={30} value={grade}
           onChange={(e) => { const v = Math.max(1, Number(e.target.value) || 1); setGrade(v); if (skippedG.includes(v)) { setPer(1); setRi(undefined); } }}
-          className={`w-14 px-2 ${compact ? 'py-1.5' : 'py-2'} ${INPUT_CLASS}`} aria-label={`${prefix ? 'End g' : 'G'}rade`} />
+          className={`w-14 px-2 py-2 ${INPUT_CLASS}`} aria-label={`${prefix ? 'End g' : 'G'}rade`} />
         <label htmlFor={`${prefix}unit`} className="text-sm text-gray-700 dark:text-gray-300">Unit</label>
         <select id={`${prefix}unit`} value={valStr}
           onChange={(e) => { const [p, r] = e.target.value.split("-").map(Number); setPer(p); setRi(r > 1 ? r : undefined); }}
           disabled={gradeSkippedV || options.length === 0}
-          className={`px-2 ${compact ? 'py-1.5' : 'py-2'} ${INPUT_CLASS}`} aria-label={gradeSkippedV ? "No units (grade skipped)" : `${prefix ? 'End u' : 'U'}nit`}>
+          className={`px-2 py-2 ${INPUT_CLASS}`} aria-label={gradeSkippedV ? "No units (grade skipped)" : `${prefix ? 'End u' : 'U'}nit`}>
           {options.length === 0 && <option value="">—</option>}
           {options.map((o) => <option key={`${o.period}-${o.repeatedInstance ?? 1}`} value={`${o.period}-${o.repeatedInstance ?? 1}`}>{o.label}</option>)}
         </select>
@@ -379,36 +424,87 @@ const TodateForm = ({
   ) => {
     const effMo = mo > 0 ? mo : 1;
     const dim = new Date(yr, effMo, 0).getDate();
+    const clampedDay = dy > 0 ? Math.min(dy, dim) : dy;
+    if (clampedDay !== dy && dy > 0) {
+      queueMicrotask(() => setDy(clampedDay));
+    }
+
+    const handleYearChange = (newYr: number) => {
+      setYr(newYr);
+      if (dy > 0 && mo > 0) {
+        const newDim = new Date(newYr, mo, 0).getDate();
+        if (dy > newDim) setDy(newDim);
+      }
+    };
+
+    const handleMonthChange = (newMo: number) => {
+      setMo(newMo);
+      if (dy > 0 && newMo > 0) {
+        const newDim = new Date(yr, newMo, 0).getDate();
+        if (dy > newDim) setDy(newDim);
+      }
+      if (newMo <= 0) { setDy(0); setCt(""); }
+    };
+
+    if (compact) {
+      return (
+        <div id={`panel-${prefix}calendar`} role="tabpanel" aria-labelledby={`tab-${prefix}calendar`} className="h-full flex flex-col justify-evenly">
+          <div className={compactRowClass}>
+            <label htmlFor={`${prefix}cal-year`} className={compactLabelClass}>Year</label>
+            <input id={`${prefix}cal-year`} type="number" min={1990} max={currentYear + 20} value={yr}
+              onChange={(e) => handleYearChange(Number(e.target.value) || currentYear)}
+              className={compactInputClass} aria-label={`${prefix ? 'End y' : 'Y'}ear`} />
+          </div>
+          <div className={compactRowClass}>
+            <label htmlFor={`${prefix}cal-month`} className={compactLabelClass}>Month</label>
+            <select id={`${prefix}cal-month`} value={mo}
+              onChange={(e) => handleMonthChange(Number(e.target.value))}
+              className={compactInputClass} aria-label={`${prefix ? 'End m' : 'M'}onth`}>
+              <option value={0}>—</option>
+              {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+            </select>
+          </div>
+          <div className={compactRowClass}>
+            <label htmlFor={`${prefix}cal-day`} className={compactLabelClass}>Day</label>
+            <input id={`${prefix}cal-day`} type="number" min={0} max={dim} value={clampedDay || ""} placeholder="—"
+              disabled={mo <= 0}
+              onChange={(e) => { const v = e.target.value === "" ? 0 : Math.max(0, Math.min(dim, Number(e.target.value) || 0)); setDy(v); if (v === 0) setCt(""); }}
+              className={compactInputClass} aria-label={`${prefix ? 'End d' : 'D'}ay`} />
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div id={`panel-${prefix}calendar`} role="tabpanel" aria-labelledby={`tab-${prefix}calendar`}
-        className={compact ? "flex flex-wrap gap-2 items-center" : "flex flex-col gap-3"}>
+      <div id={`panel-${prefix}calendar`} role="tabpanel" aria-labelledby={`tab-${prefix}calendar`} className="flex flex-col gap-3">
         <div className="flex flex-wrap gap-2 items-center">
           <label htmlFor={`${prefix}cal-year`} className="text-sm text-gray-700 dark:text-gray-300">Year</label>
           <input id={`${prefix}cal-year`} type="number" min={1990} max={currentYear + 20} value={yr}
-            onChange={(e) => setYr(Number(e.target.value) || currentYear)}
-            className={`w-20 px-2 ${compact ? 'py-1.5' : 'py-2'} ${INPUT_CLASS}`} aria-label={`${prefix ? 'End y' : 'Y'}ear`} />
+            onChange={(e) => handleYearChange(Number(e.target.value) || currentYear)}
+            className={`w-20 px-2 py-2 ${INPUT_CLASS}`} aria-label={`${prefix ? 'End y' : 'Y'}ear`} />
         </div>
         <div className="flex flex-wrap gap-2 items-center">
           <label htmlFor={`${prefix}cal-month`} className="text-sm text-gray-700 dark:text-gray-300">Month</label>
           <select id={`${prefix}cal-month`} value={mo}
-            onChange={(e) => setMo(Number(e.target.value))}
-            className={`px-2 ${compact ? 'py-1.5' : 'py-2'} ${INPUT_CLASS}`} aria-label={`${prefix ? 'End m' : 'M'}onth`}>
+            onChange={(e) => handleMonthChange(Number(e.target.value))}
+            className={`px-2 py-2 ${INPUT_CLASS}`} aria-label={`${prefix ? 'End m' : 'M'}onth`}>
             <option value={0}>—</option>
             {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
           </select>
         </div>
         <div className="flex flex-wrap gap-2 items-center">
           <label htmlFor={`${prefix}cal-day`} className="text-sm text-gray-700 dark:text-gray-300">Day</label>
-          <input id={`${prefix}cal-day`} type="number" min={0} max={dim} value={dy || ""} placeholder="—"
+          <input id={`${prefix}cal-day`} type="number" min={0} max={dim} value={clampedDay || ""} placeholder="—"
+            disabled={mo <= 0}
             onChange={(e) => { const v = e.target.value === "" ? 0 : Math.max(0, Math.min(dim, Number(e.target.value) || 0)); setDy(v); if (v === 0) setCt(""); }}
-            className={`w-14 px-2 ${compact ? 'py-1.5' : 'py-2'} ${INPUT_CLASS}`} aria-label={`${prefix ? 'End d' : 'D'}ay`} />
+            className={`w-14 px-2 py-2 ${INPUT_CLASS}`} aria-label={`${prefix ? 'End d' : 'D'}ay`} />
         </div>
-        {dy > 0 && (
+        {clampedDay > 0 && (
           <div className="flex flex-wrap gap-2 items-center">
             <label htmlFor={`${prefix}cal-time`} className="text-sm text-gray-700 dark:text-gray-300">Time</label>
             <input id={`${prefix}cal-time`} type="datetime-local" value={ct}
               onChange={(e) => setCt(e.target.value)}
-              className={`px-2 ${compact ? 'py-1.5' : 'py-2'} ${INPUT_CLASS}`} aria-label={`${prefix ? 'End t' : 'T'}ime`} />
+              className={`px-2 py-2 ${INPUT_CLASS}`} aria-label={`${prefix ? 'End t' : 'T'}ime`} />
           </div>
         )}
       </div>
@@ -424,7 +520,7 @@ const TodateForm = ({
           <button key={opt.value} type="button" role="tab" aria-selected={sel}
             aria-controls={`panel-${prefix}${opt.value}`} id={`tab-${prefix}${opt.value}`}
             tabIndex={sel ? 0 : -1} onClick={() => setTab(opt.value)}
-            className={`flex-1 min-w-0 px-2 ${compact ? 'py-1 text-xs' : 'py-2 text-sm'} font-medium border-b-2 -mb-px transition-colors ${
+            className={`flex-1 min-w-0 px-2 ${compact ? 'py-1 text-xs' : 'py-2 text-sm'} font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
               sel ? "border-blue-600 text-blue-600 dark:text-blue-400"
                 : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
             }`}>
@@ -438,14 +534,15 @@ const TodateForm = ({
   const w = "w-11/12";
   const panelPad = "p-3";
 
-  /* Fixed height for compact date panels so toggling tabs/end-date doesn't shift layout */
-  const datePanelH = compact ? "h-[38px]" : "min-h-[72px]";
+  /* In compact mode, both school (2 rows) and calendar (3 rows) use the same
+     fixed height so switching tabs doesn't cause layout shift. */
+  const datePanelH = compact ? "h-[130px]" : "min-h-[72px]";
 
   if (compact) {
     const endDateBlock = (
       <div className="flex flex-col">
         {dateTabBar('end-', endDateTab, setEndDateTab)}
-        <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg px-2 py-1.5 ${datePanelH} overflow-hidden`}>
+        <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg px-2 pt-1.5 pb-3 ${datePanelH}`}>
           {endDateTab === "school" && schoolPanel('end-', schoolYearEnd, setSchoolYearEnd, periodEnd, setPeriodEnd, repeatedInstanceEnd, setRepeatedInstanceEnd)}
           {endDateTab === "calendar" && calendarPanel('end-', yearEnd, setYearEnd, monthEnd, setMonthEnd, dayEnd, setDayEnd, calendarTimeEnd, setCalendarTimeEnd)}
         </div>
@@ -455,7 +552,7 @@ const TodateForm = ({
     const startDateBlock = (
       <div className="flex flex-col">
         {dateTabBar('', dateTab, setDateTab)}
-        <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg px-2 py-1.5 ${datePanelH} overflow-hidden`}>
+        <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg px-2 pt-1.5 pb-3 ${datePanelH}`}>
           {dateTab === "school" && schoolPanel('', schoolYear, setSchoolYear, period, setPeriod, repeatedInstance, setRepeatedInstance)}
           {dateTab === "calendar" && calendarPanel('', year, setYear, month, setMonth, day, setDay, calendarTime, setCalendarTime)}
         </div>
@@ -485,11 +582,11 @@ const TodateForm = ({
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <input id="todate-has-end-date" type="checkbox" checked={hasEndDate}
                     onChange={(e) => setHasEndDate(e.target.checked)}
-                    className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500" />
-                  <label htmlFor="todate-has-end-date" id="end-date-label" className="text-sm font-medium text-gray-700 dark:text-gray-300">End</label>
+                    className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                  <label htmlFor="todate-has-end-date" id="end-date-label" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">End</label>
                 </div>
                 {hasEndDate ? endDateBlock : (
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1.5 h-[64px] flex items-center justify-center">
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1.5 h-[156px] flex items-center justify-center">
                     <span className="text-xs text-gray-400 dark:text-gray-500">No end date</span>
                   </div>
                 )}
@@ -538,7 +635,7 @@ const TodateForm = ({
                     setSelectedTags((prev) => [...prev, t]);
                     setNewTagName("");
                   }}
-                  className="px-2 py-1 text-xs font-medium rounded bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500">
+                  className="px-2 py-1 text-xs font-medium rounded bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500 cursor-pointer">
                   +
                 </button>
               </div>
@@ -552,7 +649,7 @@ const TodateForm = ({
                 const isSel = selectedTags.some((t) => t._id === tag._id);
                 return (
                   <button key={tag._id} type="button" onClick={() => toggleTag(tag)}
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border transition-colors ${
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
                       isSel ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                         : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400'
                     }`}>
@@ -567,7 +664,7 @@ const TodateForm = ({
 
         {/* Submit — centered on full width */}
         <button type="submit"
-          className="self-center px-8 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white font-medium rounded-lg transition-colors">
+          className="self-center px-8 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white font-medium rounded-lg transition-colors cursor-pointer">
           {initialData ? "Update Todate" : "Save Todate"}
         </button>
       </form>
@@ -613,8 +710,8 @@ const TodateForm = ({
         <div className="flex items-center gap-2 mb-2">
           <input id="todate-has-end-date" type="checkbox" checked={hasEndDate}
             onChange={(e) => setHasEndDate(e.target.checked)}
-            className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500" />
-          <label htmlFor="todate-has-end-date" id="end-date-label" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+          <label htmlFor="todate-has-end-date" id="end-date-label" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
             End date
           </label>
         </div>
@@ -697,7 +794,7 @@ const TodateForm = ({
       )}
 
       <button type="submit"
-        className="w-full min-h-[44px] bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-2 text-white font-medium py-2 px-4 rounded-lg transition-colors touch-manipulation">
+        className="w-full min-h-[44px] bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 text-white font-medium py-2 px-4 rounded-lg transition-colors touch-manipulation cursor-pointer">
         {initialData ? "Update Todate" : "Save Todate"}
       </button>
     </form>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { TodateType, TodatesType, TagType, TagsType, SchoolStartDate } from './types';
 import TodateForm from './components/TodateForm';
@@ -65,6 +65,10 @@ function App() {
   const [showUntagged, setShowUntagged] = useState(true);
   const [timelineStartYear, setTimelineStartYear] = useState(minYear);
   const [timelineEndYear, setTimelineEndYear] = useState(maxYear);
+  const startYearRef = useRef(timelineStartYear);
+  const endYearRef = useRef(timelineEndYear);
+  startYearRef.current = timelineStartYear;
+  endYearRef.current = timelineEndYear;
 
   // Sync timeline span when the data range changes (e.g. sample data loads, first todate added)
   const prevMinRef = useRef(minYear);
@@ -96,8 +100,11 @@ function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [fabOpen]);
 
-  const effectiveStartYear = Math.min(timelineStartYear, timelineEndYear);
-  const effectiveEndYear = Math.max(timelineStartYear, timelineEndYear);
+  const MAX_SPAN = 200;
+  const rawStart = Math.min(timelineStartYear, timelineEndYear);
+  const rawEnd = Math.max(timelineStartYear, timelineEndYear);
+  const effectiveStartYear = rawEnd - rawStart > MAX_SPAN ? rawEnd - MAX_SPAN : rawStart;
+  const effectiveEndYear = rawEnd;
 
   const filtered = useMemo(() => {
     let list = todatesList;
@@ -186,13 +193,37 @@ function App() {
     setFormResetKey((k) => k + 1);
   }
 
-  function inlineSaveSchool(data: SchoolStartDate): void {
-    setSchoolStartDate(data);
-  }
+  const handleSpanChange = useCallback((start: number, end: number) => {
+    const s = Math.min(start, end);
+    const e = Math.max(start, end);
+    if (e - s > MAX_SPAN) {
+      const center = (s + e) / 2;
+      setTimelineStartYear(Math.round(center - MAX_SPAN / 2));
+      setTimelineEndYear(Math.round(center + MAX_SPAN / 2));
+    } else {
+      setTimelineStartYear(s);
+      setTimelineEndYear(e);
+    }
+  }, []);
+
+  const handleStartYearChange = useCallback((v: number) => {
+    setTimelineStartYear((prev) => {
+      const next = v || prev;
+      const end = endYearRef.current;
+      return end - next > MAX_SPAN ? end - MAX_SPAN : next;
+    });
+  }, []);
+
+  const handleEndYearChange = useCallback((v: number) => {
+    setTimelineEndYear((prev) => {
+      const next = v || prev;
+      const start = startYearRef.current;
+      return next - start > MAX_SPAN ? start + MAX_SPAN : next;
+    });
+  }, []);
 
   const defaultPanelContent = (
     <div className="h-full flex flex-col gap-3 p-3">
-      {/* Todate form (full width, includes inline tag creation) */}
       <div className="flex-1 min-h-0 flex flex-col rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3">
         <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 shrink-0">Create Todate</h2>
         <TodateForm
@@ -204,16 +235,7 @@ function App() {
           schoolStartDate={schoolStartDate}
           compact
           onAddTag={inlineAddTag}
-        />
-      </div>
-      {/* Bottom: School data */}
-      <div className="shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3">
-        <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">School Data</h2>
-        <SchoolDataForm
-          key={schoolStartDate ? `school-inline-${schoolStartDate.referenceYear}-${schoolStartDate.month ?? 0}` : 'school-inline-create'}
-          initialData={schoolStartDate}
-          onSave={inlineSaveSchool}
-          compact
+          onOpenSchoolData={toggleSchoolDataModal}
         />
       </div>
     </div>
@@ -245,8 +267,8 @@ function App() {
             onShowUntaggedChange={setShowUntagged}
             timelineStartYear={effectiveStartYear}
             timelineEndYear={effectiveEndYear}
-            onStartYearChange={setTimelineStartYear}
-            onEndYearChange={setTimelineEndYear}
+            onStartYearChange={handleStartYearChange}
+            onEndYearChange={handleEndYearChange}
             filtersOpen={filtersOpen}
             setFiltersOpen={setFiltersOpen}
             filtersRef={filtersRef}
@@ -269,21 +291,21 @@ function App() {
         </nav>
       </header>
 
-      {/* FAB area: always on small screens; on md+ only when a todate is active (forms hidden) */}
+      {/* School FAB: always visible */}
+      <button
+        type="button"
+        onClick={toggleSchoolDataModal}
+        aria-label="School data"
+        className={`fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-30 ${fabSettingsButtonClass}`}
+      >
+        <Icon src={schoolIcon} className="w-5 h-5 sm:w-6 sm:h-6" />
+      </button>
+
+      {/* Create FAB area: always on small screens; on md+ only when a todate is active */}
       <div
         ref={fabAreaRef}
-        className={`${hasActiveTodate ? '' : 'md:hidden'} fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-30 flex flex-row items-end gap-2 sm:gap-3`}
+        className={`${hasActiveTodate ? '' : 'md:hidden'} fixed bottom-6 right-20 sm:bottom-8 sm:right-24 z-30 flex flex-row items-end gap-2 sm:gap-3`}
       >
-        {/* School FAB: opens school data modal */}
-        <button
-          type="button"
-          onClick={toggleSchoolDataModal}
-          aria-label="School data"
-          className={fabSettingsButtonClass}
-        >
-          <Icon src={schoolIcon} className="w-5 h-5 sm:w-6 sm:h-6" />
-        </button>
-        {/* Create FAB column */}
         <div className="flex flex-col items-end gap-2 sm:gap-3">
           {fabOpen && (
             <div className="flex flex-col sm:flex-row-reverse gap-2">
@@ -338,6 +360,7 @@ function App() {
           maxYear={effectiveEndYear}
           defaultContent={defaultPanelContent}
           onActiveChange={setHasActiveTodate}
+          onSpanChange={handleSpanChange}
         />
       </main>
 
@@ -352,6 +375,7 @@ function App() {
               toggleTagModal={toggleTagModal}
               onEditTag={openEditTag}
               schoolStartDate={schoolStartDate}
+              onOpenSchoolData={toggleSchoolDataModal}
             />
           </Modal>,
           document.body

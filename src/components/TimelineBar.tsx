@@ -50,6 +50,8 @@ const PADDING_Y = 18;
 const AXIS_X = 28;
 const MIN_LANE_WIDTH = 18;
 const BRACKET_RADIUS = 4;
+const MAX_SPAN = 200;
+const LABEL_MIN_PX = 14; // minimum pixel gap between year labels before we thin them out
 
 interface TimelineBarProps {
   items: TimelineBarItem[];
@@ -59,6 +61,7 @@ interface TimelineBarProps {
   onHover?: (item: TimelineBarItem | null) => void;
   onSelect?: (item: TimelineBarItem | null) => void;
   selectedId?: string | null;
+  onSpanChange?: (startYear: number, endYear: number) => void;
 }
 
 export default function TimelineBar({
@@ -69,6 +72,7 @@ export default function TimelineBar({
   onHover,
   onSelect,
   selectedId: controlledSelectedId,
+  onSpanChange,
 }: TimelineBarProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(200);
@@ -181,16 +185,173 @@ export default function TimelineBar({
     ].join(' ');
   }
 
-  // Year tick marks for the axis
+  // Year tick marks — thin out labels when they'd overlap
+  const totalYears = range.maxYear - range.minYear;
+  const pxPerYear = totalYears > 0 ? (height - 2 * PADDING_Y) / totalYears : 1;
+  const STEP_OPTIONS = [1, 2, 5, 10, 20, 25, 50, 100];
+  const yearStep = STEP_OPTIONS.find((s) => s * pxPerYear >= LABEL_MIN_PX) ?? 100;
+
   const yearTicks: number[] = [];
-  for (let y = Math.ceil(range.minYear); y <= Math.floor(range.maxYear); y++) {
+  const firstTick = Math.ceil(range.minYear / yearStep) * yearStep;
+  for (let y = firstTick; y <= Math.floor(range.maxYear); y += yearStep) {
     yearTicks.push(y);
   }
+
+  // --- Visual-order sorted items for arrow key navigation ---
+  const sortedItems = useMemo(() => {
+    const allItems = items.map((item) => ({
+      item,
+      y: yPos(dateToFractionalYear(item.startDate)),
+    }));
+    allItems.sort((a, b) => a.y - b.y);
+    return allItems.map((a) => a.item);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, range.minYear, range.maxYear, height]);
+
+  // Arrow key navigation within the timeline
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (sortedItems.length === 0) return;
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown' && e.key !== 'Escape') return;
+      e.preventDefault();
+
+      if (e.key === 'Escape') {
+        if (controlledSelectedId === undefined) setInternalSelectedId(null);
+        if (onSelect) onSelect(null);
+        return;
+      }
+
+      const currentIdx = activeId ? sortedItems.findIndex((i) => i.id === activeId) : -1;
+      let nextIdx: number;
+      if (e.key === 'ArrowDown') {
+        nextIdx = currentIdx < sortedItems.length - 1 ? currentIdx + 1 : 0;
+      } else {
+        nextIdx = currentIdx > 0 ? currentIdx - 1 : sortedItems.length - 1;
+      }
+      const nextItem = sortedItems[nextIdx];
+      if (controlledSelectedId === undefined) setInternalSelectedId(nextItem.id);
+      if (onSelect) onSelect(nextItem);
+    },
+    [sortedItems, activeId, controlledSelectedId, onSelect]
+  );
+
+  // --- Pinch / Ctrl+scroll gesture for timeline span ---
+  // Accumulate fractional changes so small spans still respond to gestures
+  const fracMinRef = useRef(propMinYear ?? range.minYear);
+  const fracMaxRef = useRef(propMaxYear ?? range.maxYear);
+  useEffect(() => {
+    fracMinRef.current = propMinYear ?? range.minYear;
+    fracMaxRef.current = propMaxYear ?? range.maxYear;
+  }, [propMinYear, propMaxYear, range.minYear, range.maxYear]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !onSpanChange) return;
+
+    const clampSpan = () => {
+      const span = fracMaxRef.current - fracMinRef.current;
+      if (span > MAX_SPAN) {
+        const center = (fracMinRef.current + fracMaxRef.current) / 2;
+        fracMinRef.current = center - MAX_SPAN / 2;
+        fracMaxRef.current = center + MAX_SPAN / 2;
+      }
+    };
+
+    const applySpan = () => {
+      clampSpan();
+      const rMin = Math.round(fracMinRef.current);
+      const rMax = Math.round(fracMaxRef.current);
+      if (rMax - rMin < 1) return;
+      onSpanChange(rMin, rMax);
+    };
+
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+
+      const span = fracMaxRef.current - fracMinRef.current;
+      const delta = e.deltaY > 0 ? 0.08 : -0.08;
+      const change = span * delta;
+      fracMinRef.current -= change;
+      fracMaxRef.current += change;
+      applySpan();
+    };
+
+    let lastPinchDist = 0;
+    const activeTouches = new Map<number, Touch>();
+
+    const handleTouchStart = (e: TouchEvent) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        activeTouches.set(e.changedTouches[i].identifier, e.changedTouches[i]);
+      }
+      if (activeTouches.size === 2) {
+        const pts = Array.from(activeTouches.values());
+        lastPinchDist = Math.hypot(
+          pts[1].clientX - pts[0].clientX,
+          pts[1].clientY - pts[0].clientY
+        );
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        activeTouches.set(e.changedTouches[i].identifier, e.changedTouches[i]);
+      }
+      if (activeTouches.size !== 2) return;
+      e.preventDefault();
+
+      const pts = Array.from(activeTouches.values());
+      const dist = Math.hypot(
+        pts[1].clientX - pts[0].clientX,
+        pts[1].clientY - pts[0].clientY
+      );
+      if (lastPinchDist === 0) {
+        lastPinchDist = dist;
+        return;
+      }
+
+      const ratio = dist / lastPinchDist;
+      const span = fracMaxRef.current - fracMinRef.current;
+      const newSpan = Math.max(1, span / ratio);
+      const center = (fracMinRef.current + fracMaxRef.current) / 2;
+      fracMinRef.current = center - newSpan / 2;
+      fracMaxRef.current = center + newSpan / 2;
+      lastPinchDist = dist;
+      applySpan();
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        activeTouches.delete(e.changedTouches[i].identifier);
+      }
+      if (activeTouches.size < 2) lastPinchDist = 0;
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    el.addEventListener('touchstart', handleTouchStart, { passive: true });
+    el.addEventListener('touchmove', handleTouchMove, { passive: false });
+    el.addEventListener('touchend', handleTouchEnd);
+    el.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      el.removeEventListener('wheel', handleWheel);
+      el.removeEventListener('touchstart', handleTouchStart);
+      el.removeEventListener('touchmove', handleTouchMove);
+      el.removeEventListener('touchend', handleTouchEnd);
+      el.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [onSpanChange]);
 
   return (
     <div
       ref={containerRef}
       className={`overflow-hidden ${className}`}
+      tabIndex={0}
+      role="listbox"
+      aria-label="Timeline items"
+      aria-activedescendant={activeId ? `tl-item-${activeId}` : undefined}
+      onKeyDown={handleKeyDown}
+      style={{ outline: 'none' }}
     >
       <svg
         width={width}
@@ -249,19 +410,14 @@ export default function TimelineBar({
           return (
             <g
               key={item.id}
+              id={`tl-item-${item.id}`}
+              role="option"
+              aria-selected={isSelected}
+              aria-label={item.title}
               onMouseEnter={() => setHoveredId(item.id)}
               onMouseLeave={() => setHoveredId((id) => (id === item.id ? null : id))}
               onClick={() => handleClick(item)}
               style={{ cursor: 'pointer' }}
-              role="button"
-              tabIndex={0}
-              aria-label={item.title}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleClick(item);
-                }
-              }}
             >
               {/* Hit area */}
               <rect
@@ -275,7 +431,7 @@ export default function TimelineBar({
               <path
                 d={bracketPath(left, y1, right, y2, BRACKET_RADIUS)}
                 fill={col}
-                fillOpacity={isActive ? 0.25 : 0.12}
+                fillOpacity={isSelected ? 0.45 : isActive ? 0.25 : 0.12}
               />
               {/* Bracket border */}
               <path
@@ -283,18 +439,10 @@ export default function TimelineBar({
                 fill="none"
                 stroke={col}
                 strokeOpacity={isActive ? 1 : 0.7}
-                strokeWidth={isActive ? 2 : 1.5}
+                strokeWidth={isSelected ? 2.5 : isActive ? 2 : 1.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              {isSelected && (
-                <circle
-                  cx={(left + right) / 2}
-                  cy={y2}
-                  r={3}
-                  fill={col}
-                />
-              )}
             </g>
           );
         })}
@@ -309,26 +457,21 @@ export default function TimelineBar({
           return (
             <g
               key={item.id}
+              id={`tl-item-${item.id}`}
+              role="option"
+              aria-selected={isSelected}
+              aria-label={item.title}
               onMouseEnter={() => setHoveredId(item.id)}
               onMouseLeave={() => setHoveredId((id) => (id === item.id ? null : id))}
               onClick={() => handleClick(item)}
               style={{ cursor: 'pointer' }}
-              role="button"
-              tabIndex={0}
-              aria-label={item.title}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleClick(item);
-                }
-              }}
             >
-              {/* Wide hit area for easy clicking/tapping */}
+              {/* Hit area — half-size for less obstruction at small scales */}
               <rect
-                x={0}
-                y={cy - 12}
-                width={width}
-                height={24}
+                x={AXIS_X}
+                y={cy - 6}
+                width={width - AXIS_X}
+                height={12}
                 fill="transparent"
               />
               <line
@@ -337,14 +480,11 @@ export default function TimelineBar({
                 x2={width}
                 y2={cy}
                 stroke={col}
-                strokeOpacity={isActive ? 1 : 0.55}
-                strokeWidth={isActive ? 3 : 2}
+                strokeOpacity={isSelected ? 1 : isActive ? 1 : 0.55}
+                strokeWidth={isSelected ? 3 : isActive ? 3 : 2}
                 strokeDasharray={isSelected ? 'none' : '6 4'}
                 strokeLinecap="round"
               />
-              {isSelected && (
-                <circle cx={AXIS_X + 6} cy={cy} r={3} fill={col} />
-              )}
             </g>
           );
         })}

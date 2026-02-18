@@ -56,7 +56,7 @@ const TagForm = ({ addTag, initialTag, updateTag, compact }: TagFormProps) => {
         </div>
         <button
           type="submit"
-          className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white font-medium rounded-lg transition-colors"
+          className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white font-medium rounded-lg transition-colors cursor-pointer"
         >
           {initialTag ? "Update" : "Save"}
         </button>
@@ -104,7 +104,7 @@ const TagForm = ({ addTag, initialTag, updateTag, compact }: TagFormProps) => {
       </div>
       <button
         type="submit"
-        className="w-full sm:w-auto sm:min-w-[140px] min-h-[44px] bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-2 text-white font-medium py-2 px-4 rounded-lg transition-colors touch-manipulation"
+        className="w-full sm:w-auto sm:min-w-[140px] min-h-[44px] bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 text-white font-medium py-2 px-4 rounded-lg transition-colors touch-manipulation cursor-pointer"
       >
         {initialTag ? "Update Tag" : "Save Tag"}
       </button>

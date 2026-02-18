@@ -43,7 +43,7 @@ export default function ThemeToggle({
         aria-controls={open ? listboxId : undefined}
         aria-label="Theme"
         title={`Theme: ${LABELS[theme]}`}
-        className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded bg-gray-400 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-600 dark:focus-visible:ring-gray-400 transition-colors touch-manipulation"
+        className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded bg-gray-400 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-gray-600 dark:focus-visible:ring-gray-400 transition-colors touch-manipulation cursor-pointer"
       >
         <Icon
           src={theme === 'light' ? lightModeIcon : theme === 'dark' ? darkModeIcon : defaultModeIcon}
@@ -68,7 +68,7 @@ export default function ThemeToggle({
                 setTheme(t);
                 setOpen(false);
               }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded"
+              className="w-full text-left px-4 py-2 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded cursor-pointer"
             >
               {LABELS[t]}
             </button>

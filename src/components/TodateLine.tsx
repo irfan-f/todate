@@ -38,6 +38,7 @@ const TodateLine = ({
   maxYear,
   defaultContent,
   onActiveChange,
+  onSpanChange,
 }: {
   list: TodateType[];
   schoolStartDate: SchoolStartDate | null;
@@ -47,6 +48,7 @@ const TodateLine = ({
   maxYear?: number;
   defaultContent?: React.ReactNode;
   onActiveChange?: (hasActive: boolean) => void;
+  onSpanChange?: (startYear: number, endYear: number) => void;
 }) => {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -120,6 +122,7 @@ const TodateLine = ({
           onHover={handleHover}
           onSelect={handleSelect}
           selectedId={selectedId}
+          onSpanChange={onSpanChange}
           className="flex-1 min-h-0 bg-stone-50 dark:bg-gray-900/50"
         />
       </div>
