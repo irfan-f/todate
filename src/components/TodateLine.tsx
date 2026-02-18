@@ -128,7 +128,7 @@ const TodateLine = ({
       </div>
 
       {/* Right content area (≥75%) */}
-      <div className={`flex-1 min-h-0 overflow-y-auto ${activeTodate ? 'pb-24 sm:pb-28' : 'pb-24 md:pb-0'}`}>
+      <div className={`flex-1 min-h-0 overflow-y-auto overscroll-contain ${activeTodate ? 'pb-24 sm:pb-28' : 'pb-24 md:pb-0'}`}>
         {rightContent}
       </div>
     </div>
