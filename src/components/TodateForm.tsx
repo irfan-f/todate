@@ -327,8 +327,6 @@ const TodateForm = ({
   }
 
   const tagIds = Object.keys(tags);
-  const effectiveMonth = month > 0 ? month : 1;
-  const daysInMonth = new Date(year, effectiveMonth, 0).getDate();
 
   /* ─── shared helpers that render date tab contents ─── */
   const schoolPanel = (
