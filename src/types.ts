@@ -75,6 +75,8 @@ export interface TodateType {
   date: string;
   /** When set, used for display; supports school year, month, day, or datetime. */
   dateDisplay?: DateValue;
+  /** Optional end of range; same shape as dateDisplay (school year or calendar date). */
+  endDateDisplay?: DateValue;
   comment?: string;
   tags: TagType[];
 }
