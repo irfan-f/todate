@@ -8,10 +8,9 @@ import TodateLine from './components/TodateLine';
 import Modal from './components/Modal';
 import Icon from './components/Icon';
 import TimelineFilters from './components/TimelineFilters';
+
 import filterListIcon from './assets/filter_list.svg?raw';
 import filterListOffIcon from './assets/filter_list_off.svg?raw';
-import hourglassUpIcon from './assets/hourglass_up.svg?raw';
-import hourglassDownIcon from './assets/hourglass_down.svg?raw';
 import starIcon from './assets/star.svg?raw';
 import tagIcon from './assets/tag.svg?raw';
 import schoolIcon from './assets/school.svg?raw';
@@ -23,16 +22,26 @@ function getYearFromTodate(todate: TodateType): number {
   return new Date(todate.date).getFullYear();
 }
 
-function sortByTodate(a: TodateType, b: TodateType, order: 'asc' | 'desc') {
-  const aVal = new Date(a.date).valueOf();
-  const bVal = new Date(b.date).valueOf();
-  return order === 'desc' ? bVal - aVal : aVal - bVal;
-}
-
 function App() {
   const [todates, setTodates] = useState<TodatesType>({});
   const [tags, setTags] = useState<TagsType>({});
   const [schoolStartDate, setSchoolStartDate] = useState<SchoolStartDate | null>(null);
+
+  // Load sample data only in dev when VITE_SAMPLE_DATA is set (npm run dev:sample)
+  const [sampleLoaded, setSampleLoaded] = useState(false);
+  useEffect(() => {
+    if (sampleLoaded) return;
+    if (import.meta.env.DEV && import.meta.env.VITE_SAMPLE_DATA === 'true') {
+      import(/* @vite-ignore */ '../sampleData').then((mod) => {
+        setTodates(mod.sampleTodates);
+        setTags(mod.sampleTags);
+        setSchoolStartDate(mod.sampleSchoolStartDate);
+        setSampleLoaded(true);
+      }).catch(() => {
+        console.warn('sampleData.ts not found at project root — starting with empty state');
+      });
+    }
+  }, [sampleLoaded]);
   const [isTodateFormModalOpen, setIsTodateFormModalOpen] = useState(false);
   const [isTagFormModalOpen, setIsTagFormModalOpen] = useState(false);
   const [editingTodate, setEditingTodate] = useState<TodateType | null>(null);
@@ -42,9 +51,9 @@ function App() {
   const totalCount = todatesList.length;
 
   const { minYear, maxYear } = useMemo(() => {
+    const y = new Date().getFullYear();
     if (todatesList.length === 0) {
-      const y = new Date().getFullYear();
-      return { minYear: y, maxYear: y };
+      return { minYear: y - 1, maxYear: y + 1 };
     }
     const years = todatesList.map(getYearFromTodate);
     return { minYear: Math.min(...years), maxYear: Math.max(...years) };
@@ -52,13 +61,26 @@ function App() {
 
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [showUntagged, setShowUntagged] = useState(true);
-  const [startYear, setStartYear] = useState(minYear);
-  const [endYear, setEndYear] = useState(maxYear);
-  const [yearFilterTouched, setYearFilterTouched] = useState(false);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [timelineStartYear, setTimelineStartYear] = useState(minYear);
+  const [timelineEndYear, setTimelineEndYear] = useState(maxYear);
+
+  // Sync timeline span when the data range changes (e.g. sample data loads, first todate added)
+  const prevMinRef = useRef(minYear);
+  const prevMaxRef = useRef(maxYear);
+  useEffect(() => {
+    if (minYear !== prevMinRef.current || maxYear !== prevMaxRef.current) {
+      setTimelineStartYear(minYear);
+      setTimelineEndYear(maxYear);
+      prevMinRef.current = minYear;
+      prevMaxRef.current = maxYear;
+    }
+  }, [minYear, maxYear]);
+
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [isSchoolDataModalOpen, setIsSchoolDataModalOpen] = useState(false);
+  const [formResetKey, setFormResetKey] = useState(0);
+  const [hasActiveTodate, setHasActiveTodate] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
   const fabAreaRef = useRef<HTMLDivElement>(null);
 
@@ -72,23 +94,10 @@ function App() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [fabOpen]);
 
-  const effectiveStartYear = yearFilterTouched
-    ? Math.max(minYear, Math.min(startYear, endYear))
-    : minYear;
-  const effectiveEndYear = yearFilterTouched
-    ? Math.min(maxYear, Math.max(startYear, endYear))
-    : maxYear;
+  const effectiveStartYear = Math.min(timelineStartYear, timelineEndYear);
+  const effectiveEndYear = Math.max(timelineStartYear, timelineEndYear);
 
-  const handleStartYearChange = (v: number) => {
-    setYearFilterTouched(true);
-    setStartYear(v);
-  };
-  const handleEndYearChange = (v: number) => {
-    setYearFilterTouched(true);
-    setEndYear(v);
-  };
-
-  const filteredAndSorted = useMemo(() => {
+  const filtered = useMemo(() => {
     let list = todatesList;
     if (selectedTagIds.length > 0) {
       list = list.filter((todate) =>
@@ -98,16 +107,12 @@ function App() {
     if (!showUntagged) {
       list = list.filter((todate) => todate.tags.length > 0);
     }
-    list = list.filter((todate) => {
-      const y = getYearFromTodate(todate);
-      return y >= effectiveStartYear && y <= effectiveEndYear;
-    });
-    return [...list].sort((a, b) => sortByTodate(a, b, sortOrder));
-  }, [todatesList, selectedTagIds, showUntagged, effectiveStartYear, effectiveEndYear, sortOrder]);
+    return list;
+  }, [todatesList, selectedTagIds, showUntagged]);
 
   const tagList = useMemo(() => Object.values(tags), [tags]);
 
-  const hasFilters = selectedTagIds.length > 0 || !showUntagged || yearFilterTouched;
+  const hasFilters = selectedTagIds.length > 0 || !showUntagged;
 
   const toggleTag = (tagId: string) => {
     setSelectedTagIds((prev) =>
@@ -169,6 +174,49 @@ function App() {
     toggleTagModal();
   }
 
+  function inlineAddTodate(todateToAdd: TodateType): void {
+    setTodates((prev) => ({ ...prev, [todateToAdd._id]: todateToAdd }));
+    setFormResetKey((k) => k + 1);
+  }
+
+  function inlineAddTag(tagToAdd: TagType): void {
+    setTags((prev) => ({ ...prev, [tagToAdd._id]: tagToAdd }));
+    setFormResetKey((k) => k + 1);
+  }
+
+  function inlineSaveSchool(data: SchoolStartDate): void {
+    setSchoolStartDate(data);
+  }
+
+  const defaultPanelContent = (
+    <div className="h-full flex flex-col gap-3 p-3">
+      {/* Todate form (full width, includes inline tag creation) */}
+      <div className="flex-1 min-h-0 flex flex-col rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3">
+        <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 shrink-0">Create Todate</h2>
+        <TodateForm
+          key={`todate-inline-${formResetKey}`}
+          tags={tags}
+          addTodate={inlineAddTodate}
+          toggleTagModal={toggleTagModal}
+          onEditTag={openEditTag}
+          schoolStartDate={schoolStartDate}
+          compact
+          onAddTag={inlineAddTag}
+        />
+      </div>
+      {/* Bottom: School data */}
+      <div className="shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3">
+        <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">School Data</h2>
+        <SchoolDataForm
+          key={schoolStartDate ? `school-inline-${schoolStartDate.referenceYear}-${schoolStartDate.month ?? 0}` : 'school-inline-create'}
+          initialData={schoolStartDate}
+          onSave={inlineSaveSchool}
+          compact
+        />
+      </div>
+    </div>
+  );
+
   return (
     <>
       <header
@@ -185,33 +233,18 @@ function App() {
 
         <nav
           className="flex flex-row items-center gap-2 sm:gap-3 justify-self-end"
-          aria-label="Sort, filter, and create"
+          aria-label="Filter and create"
         >
-          <button
-            type="button"
-            onClick={() => setSortOrder((o) => (o === 'desc' ? 'asc' : 'desc'))}
-            aria-label={sortOrder === 'desc' ? 'Sort newest first (click for oldest first)' : 'Sort oldest first (click for newest first)'}
-            title={sortOrder === 'desc' ? 'Newest first' : 'Oldest first'}
-            className={headerNavButtonClass}
-          >
-            <Icon
-              src={sortOrder === 'desc' ? hourglassDownIcon : hourglassUpIcon}
-              className="w-6 h-6 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200"
-            />
-          </button>
-
           <TimelineFilters
             tagList={tagList}
             selectedTagIds={selectedTagIds}
             toggleTag={toggleTag}
             showUntagged={showUntagged}
             onShowUntaggedChange={setShowUntagged}
-            minYear={minYear}
-            maxYear={maxYear}
-            effectiveStartYear={effectiveStartYear}
-            effectiveEndYear={effectiveEndYear}
-            onStartYearChange={handleStartYearChange}
-            onEndYearChange={handleEndYearChange}
+            timelineStartYear={effectiveStartYear}
+            timelineEndYear={effectiveEndYear}
+            onStartYearChange={setTimelineStartYear}
+            onEndYearChange={setTimelineEndYear}
             filtersOpen={filtersOpen}
             setFiltersOpen={setFiltersOpen}
             filtersRef={filtersRef}
@@ -234,10 +267,10 @@ function App() {
         </nav>
       </header>
 
-      {/* FAB area: Settings (minifab) + Create — adjacent, settings smaller */}
+      {/* FAB area: always on small screens; on md+ only when a todate is active (forms hidden) */}
       <div
         ref={fabAreaRef}
-        className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-30 flex flex-row items-end gap-2 sm:gap-3"
+        className={`${hasActiveTodate ? '' : 'md:hidden'} fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-30 flex flex-row items-end gap-2 sm:gap-3`}
       >
         {/* School FAB: opens school data modal */}
         <button
@@ -295,10 +328,14 @@ function App() {
 
       <main id="main-content" className="flex-1 min-h-0 flex flex-col bg-stone-100 dark:bg-gray-800" role="main">
         <TodateLine
-          list={filteredAndSorted}
+          list={filtered}
           totalCount={totalCount}
           schoolStartDate={schoolStartDate}
           onEditTodate={openEditTodate}
+          minYear={effectiveStartYear}
+          maxYear={effectiveEndYear}
+          defaultContent={defaultPanelContent}
+          onActiveChange={setHasActiveTodate}
         />
       </main>
 

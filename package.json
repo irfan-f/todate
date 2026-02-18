@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:sample": "VITE_SAMPLE_DATA=true vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "format": "eslint . --fix",

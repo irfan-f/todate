@@ -3,11 +3,6 @@ import { formatDateDisplay } from '../utils/date';
 import Icon from './Icon';
 import editIcon from '../assets/edit.svg?raw';
 
-/** Same as header/FAB chrome so card content is readable on any tag background without distorting the tag color. */
-const CONTENT_BG = 'bg-gray-500 dark:bg-gray-700';
-const CONTENT_TEXT = 'text-gray-100 dark:text-gray-200';
-const CONTENT_BTN = 'bg-gray-500 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-100 dark:text-gray-200 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-500';
-
 interface TodateProps {
   data: TodateType;
   schoolStartDate?: SchoolStartDate | null;
@@ -27,56 +22,71 @@ const Todate = ({ data, schoolStartDate = null, onEdit }: TodateProps) => {
         timeStyle: 'short',
       });
 
+  const endDateLabel = data.endDateDisplay
+    ? formatDateDisplay(data.endDateDisplay, {
+        schoolStart: schoolStartDate ?? undefined,
+      })
+    : null;
+
+  const rangeLabel = endDateLabel ? `${dateLabel} – ${endDateLabel}` : dateLabel;
+
   const tags = Array.isArray(data.tags) ? data.tags : [];
-  const cardBgColor = tags[0]?.color ?? FALLBACK_TAG_COLOR;
 
   return (
     <article
-      className="w-full max-w-2xl mx-3 sm:mx-4 my-3 sm:my-4 p-3 sm:p-4 rounded-2xl shadow-sm border border-black/10"
+      className="w-full h-full p-4 sm:p-6"
       aria-labelledby={`todate-title-${data._id}`}
-      style={{ backgroundColor: cardBgColor }}
     >
-      <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3 flex-wrap">
+      {/* Header: title + edit */}
+      <div className="flex items-start gap-3">
         <h3
           id={`todate-title-${data._id}`}
-          className={`text-lg sm:text-2xl font-bold px-3 py-1 rounded-full ${CONTENT_BG} ${CONTENT_TEXT}`}
+          className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 leading-tight"
         >
           {data.title}
         </h3>
-        <time
-          dateTime={dateTime.toISOString()}
-          className={`text-sm sm:text-base shrink-0 px-3 py-1 rounded-full ${CONTENT_BG} ${CONTENT_TEXT}`}
-        >
-          {dateLabel}
-        </time>
         {onEdit ? (
           <button
             type="button"
             onClick={() => onEdit(data)}
             aria-label={`Edit todate ${data.title}`}
-            className={`ml-auto min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 transition-colors touch-manipulation ${CONTENT_BTN}`}
+            className="ml-auto shrink-0 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 transition-colors touch-manipulation bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 focus-visible:ring-blue-500"
           >
             <Icon src={editIcon} className="w-5 h-5" />
           </button>
         ) : null}
       </div>
+
+      {/* Date */}
+      <time
+        dateTime={dateTime.toISOString()}
+        className="block mt-2 text-sm sm:text-base text-gray-600 dark:text-gray-400"
+      >
+        {rangeLabel}
+      </time>
+
+      {/* Comment */}
       {data.comment ? (
-        <p className={`mt-2 text-sm sm:text-base px-3 py-1 rounded-full ${CONTENT_BG} ${CONTENT_TEXT}`}>{data.comment}</p>
+        <p className="mt-4 text-base sm:text-lg text-gray-800 dark:text-gray-200 leading-relaxed">
+          {data.comment}
+        </p>
       ) : null}
+
+      {/* Tags */}
       {tags.length > 0 ? (
         <div
-          className="flex flex-wrap gap-2 mt-2 min-h-8"
+          className="flex flex-wrap gap-2 mt-4"
           role="list"
           aria-label="Tags"
         >
           {tags.map((tag, i) => (
             <span
               key={tag?._id ?? `tag-${i}`}
-              className={`px-3 py-1 rounded-full text-sm font-medium inline-flex items-center ${CONTENT_BG} ${CONTENT_TEXT}`}
+              className="px-3 py-1 rounded-full text-sm font-medium inline-flex items-center border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"
               role="listitem"
             >
               <span
-                className="inline-block w-3 h-3 rounded mr-2 shrink-0"
+                className="inline-block w-3 h-3 rounded-full mr-2 shrink-0"
                 style={{ backgroundColor: tag?.color ?? FALLBACK_TAG_COLOR }}
                 aria-hidden
               />

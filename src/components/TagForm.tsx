@@ -5,9 +5,10 @@ interface TagFormProps {
   addTag: (t: TagType) => void;
   initialTag?: TagType | null;
   updateTag?: (t: TagType) => void;
+  compact?: boolean;
 }
 
-const TagForm = ({ addTag, initialTag, updateTag }: TagFormProps) => {
+const TagForm = ({ addTag, initialTag, updateTag, compact }: TagFormProps) => {
   const [name, setName] = useState(initialTag?.name ?? '');
   const [color, setColor] = useState(initialTag?.color ?? '#000000');
 
@@ -20,13 +21,55 @@ const TagForm = ({ addTag, initialTag, updateTag }: TagFormProps) => {
     }
   }
 
+  if (compact) {
+    return (
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-wrap items-end gap-2"
+        noValidate
+      >
+        <div className="flex-1 min-w-[120px]">
+          <label htmlFor="tag-name" className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5 block">
+            Name
+          </label>
+          <input
+            id="tag-name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+            placeholder="Tag name"
+            required
+            autoComplete="off"
+          />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <input
+            id="tag-color"
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            onInput={(e) => setColor(e.currentTarget.value)}
+            className="h-8 w-8 min-w-8 cursor-pointer rounded border border-gray-300 dark:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            aria-label="Tag color"
+          />
+        </div>
+        <button
+          type="submit"
+          className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white font-medium rounded-lg transition-colors"
+        >
+          {initialTag ? "Update" : "Save"}
+        </button>
+      </form>
+    );
+  }
+
   return (
     <form
       onSubmit={handleSubmit}
       className="flex flex-col items-stretch sm:items-center justify-center gap-6"
       noValidate
     >
-      {/* Title - Required */}
       <div className="w-11/12 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-2">
         <label htmlFor="tag-name" className="text-sm sm:text-base font-bold text-gray-700 dark:text-gray-300 shrink-0">
           Name
@@ -59,8 +102,6 @@ const TagForm = ({ addTag, initialTag, updateTag }: TagFormProps) => {
           />
         </div>
       </div>
-
-      {/* Submit Button */}
       <button
         type="submit"
         className="w-full sm:w-auto sm:min-w-[140px] min-h-[44px] bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-2 text-white font-medium py-2 px-4 rounded-lg transition-colors touch-manipulation"

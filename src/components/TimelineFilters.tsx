@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import type { TagType } from '../types';
-import DualRangeYear from './DualRangeYear';
 
 export interface TimelineFiltersProps {
   tagList: TagType[];
@@ -8,10 +7,8 @@ export interface TimelineFiltersProps {
   toggleTag: (tagId: string) => void;
   showUntagged: boolean;
   onShowUntaggedChange: (show: boolean) => void;
-  minYear: number;
-  maxYear: number;
-  effectiveStartYear: number;
-  effectiveEndYear: number;
+  timelineStartYear: number;
+  timelineEndYear: number;
   onStartYearChange: (v: number) => void;
   onEndYearChange: (v: number) => void;
   filtersOpen: boolean;
@@ -26,10 +23,8 @@ export default function TimelineFilters({
   toggleTag,
   showUntagged,
   onShowUntaggedChange,
-  minYear,
-  maxYear,
-  effectiveStartYear,
-  effectiveEndYear,
+  timelineStartYear,
+  timelineEndYear,
   onStartYearChange,
   onEndYearChange,
   filtersOpen,
@@ -111,51 +106,36 @@ export default function TimelineFilters({
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div>
+        <span className="text-gray-200 dark:text-gray-300 text-sm font-medium block mb-1.5">Timeline span</span>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 min-h-[44px] sm:min-h-0">
             <label htmlFor="timeline-start-year" className="text-gray-200 dark:text-gray-300 text-sm font-medium shrink-0">
-              From year
+              From
             </label>
             <input
               id="timeline-start-year"
               type="number"
-              min={minYear}
-              max={maxYear}
-              value={effectiveStartYear}
-              onChange={(e) => onStartYearChange(Number(e.target.value) || minYear)}
+              value={timelineStartYear}
+              onChange={(e) => onStartYearChange(Number(e.target.value) || timelineStartYear)}
               className="w-20 min-h-[44px] sm:min-h-[32px] px-3 py-2 sm:py-1.5 rounded border border-gray-500 dark:border-gray-500 bg-gray-700 dark:bg-gray-600 text-gray-100 text-base sm:text-sm touch-manipulation"
-              aria-label="Start year"
+              aria-label="Timeline start year"
             />
           </div>
           <div className="flex items-center gap-2 min-h-[44px] sm:min-h-0">
             <label htmlFor="timeline-end-year" className="text-gray-200 dark:text-gray-300 text-sm font-medium shrink-0">
-              To year
+              To
             </label>
             <input
               id="timeline-end-year"
               type="number"
-              min={minYear}
-              max={maxYear}
-              value={effectiveEndYear}
-              onChange={(e) => onEndYearChange(Number(e.target.value) || maxYear)}
+              value={timelineEndYear}
+              onChange={(e) => onEndYearChange(Number(e.target.value) || timelineEndYear)}
               className="w-20 min-h-[44px] sm:min-h-[32px] px-3 py-2 sm:py-1.5 rounded border border-gray-500 dark:border-gray-500 bg-gray-700 dark:bg-gray-600 text-gray-100 text-base sm:text-sm touch-manipulation"
-              aria-label="End year"
+              aria-label="Timeline end year"
             />
           </div>
         </div>
-        {minYear < maxYear && (
-          <DualRangeYear
-            min={minYear}
-            max={maxYear}
-            low={effectiveStartYear}
-            high={effectiveEndYear}
-            onLowChange={onStartYearChange}
-            onHighChange={onEndYearChange}
-            ariaLabelStart="Start year"
-            ariaLabelEnd="End year"
-          />
-        )}
       </div>
     </div>
   );
