@@ -84,7 +84,7 @@ const Modal = ({
             <span aria-hidden>×</span>
           </button>
         </div>
-        <div className="overflow-y-auto flex-1 min-h-0">{children}</div>
+        <div className="overflow-y-auto overscroll-contain flex-1 min-h-0">{children}</div>
       </div>
     </div>
   );

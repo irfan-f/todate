@@ -146,7 +146,7 @@ export default function TimelineFilters({
       {filtersOpen && (
         <div
           id="filters-panel"
-          className="absolute top-full right-0 mt-1 z-50 w-[min(100vw-1.5rem,28rem)] max-h-[min(70vh,24rem)] overflow-y-auto rounded-lg border border-gray-500 dark:border-gray-600 bg-stone-200 dark:bg-gray-700 shadow-lg p-4 sm:p-3"
+          className="absolute top-full right-0 mt-1 z-50 w-[min(100vw-1.5rem,28rem)] max-h-[min(70vh,24rem)] overflow-y-auto overscroll-contain rounded-lg border border-gray-500 dark:border-gray-600 bg-stone-200 dark:bg-gray-700 shadow-lg p-4 sm:p-3"
           role="dialog"
           aria-label="Filters"
         >
