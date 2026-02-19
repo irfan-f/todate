@@ -1,0 +1,15 @@
+---
+description: Where code and files go; file structure and placement (create, move, rename, refactor, reorganize)
+---
+
+# File structure and placement
+
+Use when thinking about **project file structure** or **where files or directories go** (creating, moving, renaming, refactoring, reorganizing, or asking "where does X go?").
+
+**Root:** `public/`, `src/`, plus config files (e.g. `.gitignore`, `package.json`, `tsconfig.json`, `index.html` as required by tooling). **public:** static assets as-is (favicon, `images/`).
+
+**src:** Application code. One app entry (e.g. `main.tsx`) and root app component (e.g. `App.tsx`); add `router` only if you use routing.
+
+**src dirs:** assets | components | features | hooks | layouts | pages | services | store | styles | types | utils | config. Generic UI → **components**; domain-specific → **features**; shared helpers → **utils** or **config**; API → **services**; state → **store**; types → **types**; global CSS → **styles**.
+
+When adding or changing components or files, also apply **reuse**, **provider-agnostic**, and **fit** rules as relevant.

@@ -1,0 +1,15 @@
+---
+description: File, directory, export, variable, and type naming conventions with examples
+---
+
+# Naming
+
+**Files:** Components, pages, layouts → **PascalCase** (e.g. `Button.tsx`, `UserProfile.tsx`, `MainLayout.tsx`). Utils, hooks, services, config → **camelCase or lowercase** (e.g. `formatDate.ts`, `useTheme.ts`, `apiService.ts`). Types → camelCase or domain name (e.g. `user.ts`, `api.d.ts`).
+
+**Dirs:** **Lowercase** (e.g. `components/`, `utils/`, `features/`, `pages/`).
+
+**Exports:** Components → **default export** (e.g. `export default Button`). Utils, hooks, types, config → **named exports** (e.g. `export function formatDate(...)`, `export const useTheme`).
+
+**Variables and functions:** **camelCase** (e.g. `userName`, `getDisplayDate()`, `maxYear`, `formResetKey`). Constants: camelCase; use UPPER_SNAKE only if the project already uses it for env or globals.
+
+**Types (TypeScript):** Interfaces and type aliases → **PascalCase** (e.g. `TodateType`, `SchoolStartDate`, `DateValue`). **Generics → single letter only** (e.g. `T`, `K`, `V`). Props types → component name + `Props` (e.g. `ButtonProps`, `ModalProps`).

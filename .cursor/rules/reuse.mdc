@@ -1,0 +1,7 @@
+---
+description: Extend existing components and helpers; add new only when one shared piece would be unmaintainable
+---
+
+# Reuse
+
+When editing **components or shared code** (including bug fixes and behavior changes): prefer **extending** existing components or helpers over adding parallel ones. One flexible component (e.g. Button that supports icon, text, or both via props) is better than several narrow ones. Only split into separate components when a single shared one would be hard to maintain (e.g. too many props, conflicting behavior, unclear API); then keep the split minimal and clearly scoped.

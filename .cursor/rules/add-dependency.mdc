@@ -1,0 +1,7 @@
+---
+description: When adding a dependency or integrating a library—wrap in abstraction and place correctly
+---
+
+# Add dependency / integrate library
+
+When **adding a dependency or integrating a library** (e.g. API client, UI lib): apply **provider-agnostic** (wrap in helper or adapter) and **fit** (place in the right dir, e.g. `services/` for API, and match existing patterns).
