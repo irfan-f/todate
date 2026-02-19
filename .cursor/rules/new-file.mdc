@@ -1,7 +1,0 @@
----
-description: When creating a new file—placement and whether it needs a .gitignore entry
----
-
-# New file
-
-When **creating a new file**: decide placement using **file-structure**. If the file or its path is local/sensitive (e.g. local config, secrets, dev-only data), check **gitignore** and add an entry only if the path is not already covered.

@@ -1,7 +1,0 @@
----
-description: Wrap specific libraries and types in helpers or adapters so the app stays provider-agnostic
----
-
-# Provider-agnostic
-
-When **integrating a library, API, or dependency**: wrap implementation details in a small helper or adapter so the rest of the app depends on your abstraction, not the provider. Keeps the codebase easy to change later (e.g. swap API client or UI lib without touching call sites).

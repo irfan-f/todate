@@ -1,7 +1,0 @@
----
-description: When referencing a specific package or library—prompt once to add package-specific rules
----
-
-# Package-specific rules
-
-When the user or the task **references a specific package, library, or framework** (e.g. by name, docs link, or "use Tailwind", "use React Router"): **prompt the user once** to search for and add a good set of rules or instructions for that package (e.g. from official docs, Core Concepts, or best practices). Offer to draft a concise rule from the docs if they want. Do not assume package-specific conventions without that step.

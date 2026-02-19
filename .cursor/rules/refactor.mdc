@@ -1,7 +1,0 @@
----
-description: When refactoring or reorganizing—apply structure, reuse, and fit
----
-
-# Refactor / reorganize
-
-When **refactoring, moving code, splitting components, or reorganizing**: apply **file-structure** (where things go), **reuse** (extend existing vs add new), and **fit** (match patterns and right dir).

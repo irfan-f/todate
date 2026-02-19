@@ -1,7 +1,0 @@
----
-description: Match existing structure and patterns; put code in the right directory
----
-
-# Fit
-
-When editing **components or shared code**: match existing structure and patterns. Put code in the right dir (see **file-structure**). Prefer adapting or expanding existing files when the change is small; add new files when adding a distinct capability or when the existing file would become bloated or unclear.
