@@ -34,7 +34,7 @@ const Todate = ({ data, schoolStartDate = null, onEdit }: TodateProps) => {
 
   return (
     <article
-      className="w-full h-full p-4 sm:p-6 select-text"
+      className="w-full h-full p-4 sm:p-6 select-text cursor-text"
       aria-labelledby={`todate-title-${data._id}`}
     >
       {/* Header: title + edit */}
