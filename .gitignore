@@ -15,6 +15,14 @@ dist-ssr
 # Sample data (local dev only)
 sampleData.ts
 
+# Cursor and local/sensitive (do not commit unless intentional)
+.cursor/
+AGENTS.md
+.env
+.env.*
+*.pem
+secrets/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
