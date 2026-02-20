@@ -22,6 +22,8 @@ jobs:
 
       - name: Audit dependencies
         run: npm audit --audit-level=critical
+      - name: Run tests
+        run: npm run test:run
       - name: Build project
         run: npm run build
         # SVGs imported with ?raw are inlined into JS; favicon is emitted to dist/assets/
