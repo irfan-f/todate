@@ -16,8 +16,6 @@ import tagIcon from './assets/tag.svg?raw';
 import schoolIcon from './assets/school.svg?raw';
 import { useTheme } from './hooks/useTheme';
 import ThemeToggle from './components/ThemeToggle';
-import { headerNavButtonClass, fabSubButtonClass, fabMainButtonClass, fabSettingsButtonClass } from './constants/ui';
-
 function getYearFromTodate(todate: TodateType): number {
   return new Date(todate.date).getFullYear();
 }
@@ -280,7 +278,7 @@ function App() {
               aria-haspopup="dialog"
               aria-controls={filtersOpen ? 'filters-panel' : undefined}
               aria-label="Open filters"
-              className={headerNavButtonClass}
+              className="btn-nav-header"
             >
               <Icon
                 src={hasFilters ? filterListIcon : filterListOffIcon}
@@ -296,7 +294,7 @@ function App() {
         type="button"
         onClick={toggleSchoolDataModal}
         aria-label="School data"
-        className={`fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-30 ${fabSettingsButtonClass}`}
+        className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-30 fab-settings"
       >
         <Icon src={schoolIcon} className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
@@ -316,7 +314,7 @@ function App() {
                 toggleTodateModal();
               }}
               aria-label="Create new todate"
-              className={fabSubButtonClass}
+              className="fab-sub"
             >
               <Icon src={starIcon} className="w-5 h-5 text-gray-800 dark:text-gray-200" />
               <span className="text-sm font-medium">Todate</span>
@@ -328,7 +326,7 @@ function App() {
                 toggleTagModal();
               }}
               aria-label="Create new tag"
-              className={fabSubButtonClass}
+              className="fab-sub"
             >
               <Icon src={tagIcon} className="w-5 h-5 text-gray-800 dark:text-gray-200" />
               <span className="text-sm font-medium">Tag</span>
@@ -340,7 +338,7 @@ function App() {
           onClick={() => setFabOpen((o) => !o)}
           aria-expanded={fabOpen}
           aria-label={fabOpen ? 'Close create menu' : 'Create todate or tag'}
-          className={fabMainButtonClass}
+          className="fab-main"
           style={{ transform: fabOpen ? 'rotate(45deg)' : undefined }}
         >
           <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="currentColor" viewBox="0 -960 960 960" aria-hidden>
