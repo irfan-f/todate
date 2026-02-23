@@ -572,8 +572,8 @@ const TodateForm = ({
                 placeholder="Enter title" required autoComplete="off" />
             </div>
 
-            {/* Dates side by side */}
-            <div className="flex flex-row gap-2">
+            {/* Dates: stacked on narrow panels, side-by-side when wide (md+) */}
+            <div className="flex flex-col gap-2 lg:flex-row">
               <div className="flex-1 min-w-0" role="group" aria-labelledby="date-format-label">
                 <p id="date-format-label" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">Start</p>
                 {startDateBlock}
