@@ -32,10 +32,10 @@ function App() {
     if (sampleLoaded) return;
     if (import.meta.env.DEV && import.meta.env.VITE_SAMPLE_DATA === 'true') {
       const sampleDataPath = '../sampleData';
-      import(/* @vite-ignore */ sampleDataPath).then((mod: { sampleTodates: TodatesType; sampleTags: TagsType; sampleSchoolStartDate: SchoolStartDate }) => {
-        setTodates(mod.sampleTodates);
-        setTags(mod.sampleTags);
-        setSchoolStartDate(mod.sampleSchoolStartDate);
+      import(/* @vite-ignore */ sampleDataPath).then((mod) => {
+        setTodates(mod.sampleTodates as TodatesType);
+        setTags(mod.sampleTags as TagsType);
+        setSchoolStartDate(mod.sampleSchoolStartDate as SchoolStartDate);
         setSampleLoaded(true);
       }).catch(() => {
         console.warn('sampleData.ts not found at project root — starting with empty state');
