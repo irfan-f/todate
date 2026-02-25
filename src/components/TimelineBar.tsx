@@ -265,19 +265,31 @@ export default function TimelineBar({
       onSpanChange(rMin, rMax);
     };
 
-    const handleWheel = (e: WheelEvent) => {
-      if (!e.ctrlKey && !e.metaKey) return;
-      e.preventDefault();
+    const PAN_SENSITIVITY = 2;
+    const pxPerYearVal = totalYears > 0 ? (height - 2 * PADDING_Y) / totalYears : 1;
 
+    const handleWheel = (e: WheelEvent) => {
       const span = fracMaxRef.current - fracMinRef.current;
-      const delta = e.deltaY > 0 ? 0.08 : -0.08;
-      const change = span * delta;
-      fracMinRef.current -= change;
-      fracMaxRef.current += change;
+
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.08 : -0.08;
+        const change = span * delta;
+        fracMinRef.current -= change;
+        fracMaxRef.current += change;
+        applySpan();
+        return;
+      }
+
+      e.preventDefault();
+      const yearDelta = (e.deltaY / pxPerYearVal) * PAN_SENSITIVITY;
+      fracMinRef.current += yearDelta;
+      fracMaxRef.current += yearDelta;
       applySpan();
     };
 
     let lastPinchDist = 0;
+    let lastPanY = 0;
     const activeTouches = new Map<number, Touch>();
 
     const handleTouchStart = (e: TouchEvent) => {
@@ -290,6 +302,8 @@ export default function TimelineBar({
           pts[1].clientX - pts[0].clientX,
           pts[1].clientY - pts[0].clientY
         );
+      } else if (activeTouches.size === 1) {
+        lastPanY = Array.from(activeTouches.values())[0].clientY;
       }
     };
 
@@ -297,27 +311,35 @@ export default function TimelineBar({
       for (let i = 0; i < e.changedTouches.length; i++) {
         activeTouches.set(e.changedTouches[i].identifier, e.changedTouches[i]);
       }
-      if (activeTouches.size !== 2) return;
-      e.preventDefault();
-
-      const pts = Array.from(activeTouches.values());
-      const dist = Math.hypot(
-        pts[1].clientX - pts[0].clientX,
-        pts[1].clientY - pts[0].clientY
-      );
-      if (lastPinchDist === 0) {
+      if (activeTouches.size === 2) {
+        e.preventDefault();
+        const pts = Array.from(activeTouches.values());
+        const dist = Math.hypot(
+          pts[1].clientX - pts[0].clientX,
+          pts[1].clientY - pts[0].clientY
+        );
+        if (lastPinchDist === 0) {
+          lastPinchDist = dist;
+          return;
+        }
+        const ratio = dist / lastPinchDist;
+        const span = fracMaxRef.current - fracMinRef.current;
+        const newSpan = Math.max(1, span / ratio);
+        const center = (fracMinRef.current + fracMaxRef.current) / 2;
+        fracMinRef.current = center - newSpan / 2;
+        fracMaxRef.current = center + newSpan / 2;
         lastPinchDist = dist;
-        return;
+        applySpan();
+      } else if (activeTouches.size === 1) {
+        e.preventDefault();
+        const touch = Array.from(activeTouches.values())[0];
+        const dy = touch.clientY - lastPanY;
+        lastPanY = touch.clientY;
+        const yearDelta = (dy / pxPerYearVal) * PAN_SENSITIVITY;
+        fracMinRef.current += yearDelta;
+        fracMaxRef.current += yearDelta;
+        applySpan();
       }
-
-      const ratio = dist / lastPinchDist;
-      const span = fracMaxRef.current - fracMinRef.current;
-      const newSpan = Math.max(1, span / ratio);
-      const center = (fracMinRef.current + fracMaxRef.current) / 2;
-      fracMinRef.current = center - newSpan / 2;
-      fracMaxRef.current = center + newSpan / 2;
-      lastPinchDist = dist;
-      applySpan();
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
@@ -325,6 +347,9 @@ export default function TimelineBar({
         activeTouches.delete(e.changedTouches[i].identifier);
       }
       if (activeTouches.size < 2) lastPinchDist = 0;
+      if (activeTouches.size === 1) {
+        lastPanY = Array.from(activeTouches.values())[0].clientY;
+      }
     };
 
     el.addEventListener('wheel', handleWheel, { passive: false });
@@ -340,7 +365,7 @@ export default function TimelineBar({
       el.removeEventListener('touchend', handleTouchEnd);
       el.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [onSpanChange]);
+  }, [onSpanChange, totalYears, height]);
 
   return (
     <div

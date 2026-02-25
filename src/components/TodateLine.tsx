@@ -232,9 +232,9 @@ const TodateLine = ({
         />
       )}
 
-      {/* Right content area — smooth transition when collapsing */}
+      {/* Right content area — smooth transition when collapsing; overflow-x-hidden prevents scrollbar flicker during resize */}
       <div
-        className={`flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain transition-[flex-basis] duration-200 ease-out ${activeTodate ? 'pb-24 sm:pb-28' : 'pb-24 md:pb-0'}`}
+        className={`flex-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain transition-[flex-basis] duration-200 ease-out ${activeTodate ? 'pb-24 sm:pb-28' : 'pb-24 md:pb-0'}`}
       >
         {rightContent}
       </div>

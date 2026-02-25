@@ -221,7 +221,7 @@ function App() {
 
   const defaultPanelContent = (
     <div className="h-full flex flex-col gap-3 p-3">
-      <div className="flex-1 min-h-0 flex flex-col rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3">
+      <div className="flex-1 min-h-0 flex flex-col rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 @container min-w-0 overflow-x-hidden">
         <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 shrink-0">Create Todate</h2>
         <TodateForm
           key={`todate-inline-${formResetKey}`}

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { TagType } from '../types';
 
 export interface TimelineFiltersProps {
@@ -42,6 +42,37 @@ export default function TimelineFilters({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [filtersOpen, setFiltersOpen, filtersRef]);
+
+  const [startYearInput, setStartYearInput] = useState<string>(String(timelineStartYear));
+  const [endYearInput, setEndYearInput] = useState<string>(String(timelineEndYear));
+
+  useEffect(() => {
+    const active = document.activeElement;
+    const startEl = document.getElementById('timeline-start-year');
+    const endEl = document.getElementById('timeline-end-year');
+    if (active !== startEl && active !== endEl) {
+      setStartYearInput(String(timelineStartYear));
+      setEndYearInput(String(timelineEndYear));
+    }
+  }, [timelineStartYear, timelineEndYear]);
+
+  const commitStartYear = () => {
+    const n = Number(startYearInput);
+    if (Number.isFinite(n) && n >= 1990 && n <= 2100) {
+      onStartYearChange(n);
+    } else {
+      setStartYearInput(String(timelineStartYear));
+    }
+  };
+
+  const commitEndYear = () => {
+    const n = Number(endYearInput);
+    if (Number.isFinite(n) && n >= 1990 && n <= 2100) {
+      onEndYearChange(n);
+    } else {
+      setEndYearInput(String(timelineEndYear));
+    }
+  };
 
   const panel = (
     <div className="max-w-2xl space-y-3">
@@ -115,10 +146,14 @@ export default function TimelineFilters({
             </label>
             <input
               id="timeline-start-year"
-              type="number"
-              value={timelineStartYear}
-              onChange={(e) => onStartYearChange(Number(e.target.value) || timelineStartYear)}
-              className="w-20 min-h-[44px] sm:min-h-[32px] px-3 py-2 sm:py-1.5 rounded border border-gray-500 dark:border-gray-500 bg-gray-700 dark:bg-gray-600 text-gray-100 text-base sm:text-sm touch-manipulation"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={startYearInput}
+              onChange={(e) => setStartYearInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
+              onBlur={commitStartYear}
+              onKeyDown={(e) => e.key === 'Enter' && commitStartYear()}
+              className="w-20 min-h-[44px] sm:min-h-[32px] px-3 py-2 sm:py-1.5 rounded border border-gray-500 dark:border-gray-500 bg-gray-700 dark:bg-gray-600 text-gray-100 text-base sm:text-sm touch-manipulation tabular-nums"
               aria-label="Timeline start year"
             />
           </div>
@@ -128,10 +163,14 @@ export default function TimelineFilters({
             </label>
             <input
               id="timeline-end-year"
-              type="number"
-              value={timelineEndYear}
-              onChange={(e) => onEndYearChange(Number(e.target.value) || timelineEndYear)}
-              className="w-20 min-h-[44px] sm:min-h-[32px] px-3 py-2 sm:py-1.5 rounded border border-gray-500 dark:border-gray-500 bg-gray-700 dark:bg-gray-600 text-gray-100 text-base sm:text-sm touch-manipulation"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={endYearInput}
+              onChange={(e) => setEndYearInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
+              onBlur={commitEndYear}
+              onKeyDown={(e) => e.key === 'Enter' && commitEndYear()}
+              className="w-20 min-h-[44px] sm:min-h-[32px] px-3 py-2 sm:py-1.5 rounded border border-gray-500 dark:border-gray-500 bg-gray-700 dark:bg-gray-600 text-gray-100 text-base sm:text-sm touch-manipulation tabular-nums"
               aria-label="Timeline end year"
             />
           </div>
