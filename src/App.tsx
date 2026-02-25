@@ -83,6 +83,7 @@ function App() {
   const [isSchoolDataModalOpen, setIsSchoolDataModalOpen] = useState(false);
   const [formResetKey, setFormResetKey] = useState(0);
   const [hasActiveTodate, setHasActiveTodate] = useState(false);
+  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
   const fabAreaRef = useRef<HTMLDivElement>(null);
 
@@ -289,10 +290,10 @@ function App() {
         <Icon src={schoolIcon} className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
 
-      {/* Create FAB area: always on small screens; on md+ only when a todate is active */}
+      {/* Create FAB area: always on small screens; on md+ when a todate is active or panel is collapsed (form inaccessible) */}
       <div
         ref={fabAreaRef}
-        className={`${hasActiveTodate ? '' : 'md:hidden'} fixed bottom-6 right-20 sm:bottom-8 sm:right-24 z-30 flex flex-row items-end gap-2 sm:gap-3`}
+        className={`${hasActiveTodate || isRightPanelCollapsed ? '' : 'md:hidden'} fixed bottom-6 right-20 sm:bottom-8 sm:right-24 z-30 flex flex-row items-end gap-2 sm:gap-3`}
       >
         <div className="flex flex-col items-end gap-2 sm:gap-3">
           {fabOpen && (
@@ -348,6 +349,7 @@ function App() {
           maxYear={effectiveEndYear}
           defaultContent={inlineCreateForm}
           onActiveChange={setHasActiveTodate}
+          onRightPanelCollapsedChange={setIsRightPanelCollapsed}
           onSpanChange={handleSpanChange}
         />
       </main>

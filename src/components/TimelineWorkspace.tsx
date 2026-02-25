@@ -21,6 +21,7 @@ const TimelineWorkspace = ({
   maxYear,
   defaultContent,
   onActiveChange,
+  onRightPanelCollapsedChange,
   onSpanChange,
 }: {
   list: TodateType[];
@@ -31,6 +32,7 @@ const TimelineWorkspace = ({
   maxYear?: number;
   defaultContent?: React.ReactNode;
   onActiveChange?: (hasActive: boolean) => void;
+  onRightPanelCollapsedChange?: (collapsed: boolean) => void;
   onSpanChange?: (startYear: number, endYear: number) => void;
 }) => {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -65,8 +67,16 @@ const TimelineWorkspace = ({
   }, [timelineWidthPct, isRightPanelCollapsed]);
 
   const toggleRightPanel = useCallback(() => {
-    setIsRightPanelCollapsed((prev) => !prev);
-  }, []);
+    setIsRightPanelCollapsed((prev) => {
+      const next = !prev;
+      onRightPanelCollapsedChange?.(next);
+      return next;
+    });
+  }, [onRightPanelCollapsedChange]);
+
+  useEffect(() => {
+    onRightPanelCollapsedChange?.(isRightPanelCollapsed);
+  }, [isRightPanelCollapsed, onRightPanelCollapsedChange]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -140,11 +150,13 @@ const TimelineWorkspace = ({
       : 'No todates match the current filters.';
 
   const rightContent = activeTodate ? (
-    <Todate
-      data={activeTodate}
-      schoolStartDate={schoolStartDate}
-      onEdit={onEditTodate}
-    />
+    isRightPanelCollapsed ? null : (
+      <Todate
+        data={activeTodate}
+        schoolStartDate={schoolStartDate}
+        onEdit={onEditTodate}
+      />
+    )
   ) : (
     <>
       <div className="md:hidden h-full flex items-center justify-center p-4">
@@ -152,7 +164,7 @@ const TimelineWorkspace = ({
           {isEmpty ? emptyMessage : 'Hover or tap an item on the timeline to view details.'}
         </p>
       </div>
-      {defaultContent && (
+      {defaultContent && !isRightPanelCollapsed && (
         <div className="hidden md:flex flex-col h-full">
           {defaultContent}
         </div>
