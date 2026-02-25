@@ -22,8 +22,8 @@ const TimelineWorkspace = ({
   defaultContent,
   onActiveChange,
   onSpanChange,
-  onRightPanelCollapsedChange,
   isRightPanelCollapsed = false,
+  onRightPanelCollapsedChange,
   datasetsPanelCollapsed = false,
   onDatasetsPanelCollapsedChange,
 }: {
