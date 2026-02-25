@@ -83,3 +83,115 @@ export interface TodateType {
 
 export type TodatesType = Record<string, TodateType>;
 export type TagsType = Record<string, TagType>;
+
+/** Dataset: one named collection of todates, tags, and optional school start. */
+export interface Dataset {
+  id: string;
+  name: string;
+  todates: TodatesType;
+  tags: TagsType;
+  schoolStartDate?: SchoolStartDate | null;
+  updatedAt?: string;
+}
+
+/** Store: all datasets plus the active dataset id. */
+export interface Store {
+  activeId: string;
+  datasets: Record<string, Dataset>;
+}
+
+/** Import payload: one dataset's content (e.g. from a profile file or one dataset of a store). */
+export interface SingleDatasetPayload {
+  name?: string;
+  todates: TodatesType;
+  tags: TagsType;
+  schoolStartDate?: SchoolStartDate | null;
+}
+
+export function isSingleDatasetPayload(x: unknown): x is SingleDatasetPayload {
+  if (x === null || typeof x !== 'object' || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  if (!isTodatesType(o.todates)) return false;
+  if (!isTagsType(o.tags)) return false;
+  if (o.name !== undefined && typeof o.name !== 'string') return false;
+  if (o.schoolStartDate !== undefined && o.schoolStartDate !== null && !isSchoolStartDate(o.schoolStartDate)) return false;
+  return true;
+}
+
+function isRecordOf(
+  obj: unknown,
+  keyCheck: (k: string) => boolean,
+  valueCheck: (v: unknown) => boolean
+): obj is Record<string, unknown> {
+  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return false;
+  return Object.entries(obj).every(([k, v]) => keyCheck(k) && valueCheck(v));
+}
+
+export function isTagType(x: unknown): x is TagType {
+  if (x === null || typeof x !== 'object' || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  return (
+    typeof o._id === 'string' &&
+    o._id.length > 0 &&
+    typeof o.name === 'string' &&
+    typeof o.color === 'string'
+  );
+}
+
+export function isSchoolStartDate(x: unknown): x is SchoolStartDate {
+  if (x === null || typeof x !== 'object' || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  return typeof o.referenceYear === 'number' && Number.isInteger(o.referenceYear);
+}
+
+export function isDateValue(x: unknown): x is DateValue {
+  if (x === null || typeof x !== 'object' || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  if (o.kind === 'school')
+    return typeof (o as unknown as DateValueSchool).schoolYear === 'number';
+  if (o.kind === 'month')
+    return typeof (o as unknown as DateValueMonth).year === 'number' && typeof (o as unknown as DateValueMonth).month === 'number';
+  if (o.kind === 'day')
+    return typeof (o as unknown as DateValueDay).year === 'number' && typeof (o as unknown as DateValueDay).month === 'number' && typeof (o as unknown as DateValueDay).day === 'number';
+  if (o.kind === 'datetime')
+    return typeof (o as unknown as DateValueDatetime).iso === 'string';
+  return false;
+}
+
+export function isTodateType(x: unknown): x is TodateType {
+  if (x === null || typeof x !== 'object' || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  if (typeof o._id !== 'string' || o._id.length === 0) return false;
+  if (typeof o.title !== 'string') return false;
+  if (typeof o.date !== 'string') return false;
+  if (!Array.isArray(o.tags)) return false;
+  return (o.tags as unknown[]).every((t) => isTagType(t));
+}
+
+export function isTodatesType(x: unknown): x is TodatesType {
+  return isRecordOf(x, () => true, isTodateType);
+}
+
+export function isTagsType(x: unknown): x is TagsType {
+  return isRecordOf(x, () => true, isTagType);
+}
+
+export function isDataset(x: unknown): x is Dataset {
+  if (x === null || typeof x !== 'object' || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  if (typeof o.id !== 'string' || o.id.length === 0) return false;
+  if (typeof o.name !== 'string') return false;
+  if (!isTodatesType(o.todates)) return false;
+  if (!isTagsType(o.tags)) return false;
+  if (o.schoolStartDate !== undefined && o.schoolStartDate !== null && !isSchoolStartDate(o.schoolStartDate)) return false;
+  if (o.updatedAt !== undefined && typeof o.updatedAt !== 'string') return false;
+  return true;
+}
+
+export function isStore(x: unknown): x is Store {
+  if (x === null || typeof x !== 'object' || Array.isArray(x)) return false;
+  const o = x as Record<string, unknown>;
+  if (typeof o.activeId !== 'string') return false;
+  if (o.datasets === null || typeof o.datasets !== 'object' || Array.isArray(o.datasets)) return false;
+  return Object.values(o.datasets as Record<string, unknown>).every((d) => isDataset(d));
+}

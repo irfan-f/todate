@@ -4,8 +4,8 @@ import { todateToBarItem } from '../utils/timelineBar';
 import TimelineBar, { type TimelineBarItem } from './TimelineBar';
 import Todate from './Todate';
 import Icon from './Icon';
-import rightPanelCloseIcon from '../assets/right-panel-close.svg?raw';
-import rightPanelOpenIcon from '../assets/right-panel-open.svg?raw';
+import panelCollapseIcon from '../assets/panel-collapse.svg?raw';
+import panelExpandIcon from '../assets/panel-expand.svg?raw';
 
 const TIMELINE_WIDTH_STORAGE_KEY = 'todate-timeline-width-pct';
 const MIN_TIMELINE_PCT = 15;
@@ -22,6 +22,10 @@ const TimelineWorkspace = ({
   defaultContent,
   onActiveChange,
   onSpanChange,
+  isRightPanelCollapsed = false,
+  onRightPanelCollapsedChange,
+  datasetsPanelCollapsed = false,
+  onDatasetsPanelCollapsedChange,
 }: {
   list: TodateType[];
   schoolStartDate: SchoolStartDate | null;
@@ -32,6 +36,10 @@ const TimelineWorkspace = ({
   defaultContent?: React.ReactNode;
   onActiveChange?: (hasActive: boolean) => void;
   onSpanChange?: (startYear: number, endYear: number) => void;
+  isRightPanelCollapsed?: boolean;
+  onRightPanelCollapsedChange?: (collapsed: boolean) => void;
+  datasetsPanelCollapsed?: boolean;
+  onDatasetsPanelCollapsedChange?: (collapsed: boolean) => void;
 }) => {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -46,7 +54,6 @@ const TimelineWorkspace = ({
       ? n
       : DEFAULT_TIMELINE_PCT;
   });
-  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
   const timelineBarWidthPct = isRightPanelCollapsed ? 100 : timelineWidthPct;
   const timelineBarWidthStyle = { ['--timeline-width' as string]: `${timelineBarWidthPct}%` };
   const [isDragging, setIsDragging] = useState(false);
@@ -60,13 +67,13 @@ const TimelineWorkspace = ({
     const widthToUse = isRightPanelCollapsed ? 100 : timelineWidthPct;
     dragStartRef.current = { x: e.clientX, widthPct: widthToUse };
     lastSavedWidthPctRef.current = widthToUse;
-    if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
+    if (isRightPanelCollapsed) onRightPanelCollapsedChange?.(false);
     setIsDragging(true);
   }, [timelineWidthPct, isRightPanelCollapsed]);
 
   const toggleRightPanel = useCallback(() => {
-    setIsRightPanelCollapsed((prev) => !prev);
-  }, []);
+    onRightPanelCollapsedChange?.(!isRightPanelCollapsed);
+  }, [isRightPanelCollapsed, onRightPanelCollapsedChange]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -168,8 +175,33 @@ const TimelineWorkspace = ({
       aria-label="Timeline workspace"
     >
       <div
-        className="relative flex flex-col min-h-0 shrink-0 w-1/4 md:w-(--timeline-width) transition-[width] duration-200 ease-out"
+        className="relative flex flex-col min-h-0 shrink-0 w-1/4 md:w-(--timeline-width) transition-[width] duration-200 ease-out bg-stone-50 dark:bg-gray-900/50"
       >
+        <div className="hidden md:flex shrink-0 justify-between items-center min-h-[28px] py-0.5 px-1 border-b border-gray-200 dark:border-gray-700">
+          <button
+            type="button"
+            onClick={() => onDatasetsPanelCollapsedChange?.(!datasetsPanelCollapsed)}
+            aria-label={datasetsPanelCollapsed ? 'Expand datasets panel' : 'Close datasets panel'}
+            data-testid="datasets-panel-toggle"
+            className="p-1 rounded text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+          >
+            <Icon
+              src={datasetsPanelCollapsed ? panelCollapseIcon : panelExpandIcon}
+              className="w-4 h-4"
+            />
+          </button>
+          <button
+            type="button"
+            onClick={toggleRightPanel}
+            aria-label={isRightPanelCollapsed ? 'Open right panel' : 'Close right panel'}
+            className="p-1 rounded text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+          >
+            <Icon
+              src={isRightPanelCollapsed ? panelExpandIcon : panelCollapseIcon}
+              className="w-4 h-4"
+            />
+          </button>
+        </div>
         <TimelineBar
           items={barItems}
           minYear={minYear}
@@ -178,21 +210,9 @@ const TimelineWorkspace = ({
           onSelect={handleSelect}
           selectedId={selectedId}
           onSpanChange={onSpanChange}
-          className="flex-1 min-h-0 bg-stone-50 dark:bg-gray-900/50"
+          className="flex-1 min-h-0"
         />
-        <button
-          type="button"
-          onClick={toggleRightPanel}
-          aria-label={isRightPanelCollapsed ? 'Open right panel' : 'Close right panel'}
-          className="hidden md:flex absolute top-0 right-0 z-10 p-2 rounded-lg text-gray-500 dark:text-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer"
-        >
-          <Icon
-            src={isRightPanelCollapsed ? rightPanelOpenIcon : rightPanelCloseIcon}
-            className="w-5 h-5 text-gray-500 dark:text-gray-400"
-          />
-        </button>
       </div>
-
       {!isRightPanelCollapsed && (
         <div
           role="separator"
