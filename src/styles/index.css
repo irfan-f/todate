@@ -83,6 +83,23 @@
     user-select: text;
     cursor: text;
   }
+  /* Normalize select to match text input styling — same font, padding, box model */
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    padding-inline-start: 0.5rem;
+    padding-inline-end: 1.75rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.375rem center;
+    background-size: 1rem;
+  }
+  .dark select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  }
   input[type="number"],
   input[type="checkbox"],
   input[type="color"],

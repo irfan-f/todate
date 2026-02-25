@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
-import type {
-  TodateType,
-  TagType,
-  TagsType,
-  DateValue,
-  SchoolStartDate,
-  SchoolPeriodType,
-} from "../types";
+import type { TodateType, TagType, TagsType, DateValue, SchoolStartDate } from "../types";
+import { INPUT_CLASS } from "../constants";
 import { dateValueToIso, isoToDatetimeLocal } from "../utils/date";
+import { periodCount } from "../utils/schoolPeriod";
+import SchoolYearDatePanel from "./SchoolYearDatePanel";
+import CalendarDatePanel from "./CalendarDatePanel";
 import NewButton from "./NewButton";
 import Icon from "./Icon";
 import editIcon from "../assets/edit.svg?raw";
@@ -19,22 +16,6 @@ const DATE_TABS: { value: DateTab; label: string }[] = [
   { value: "calendar", label: "Date" },
   { value: "school", label: "School year" },
 ];
-
-function periodCount(type: SchoolPeriodType): number {
-  return type === "quarter" ? 4 : type === "trimester" ? 3 : 2;
-}
-
-function periodLabel(type: SchoolPeriodType, n: number): string {
-  return type === "quarter" ? `Q${n}` : type === "trimester" ? `Tri ${n}` : `Sem ${n}`;
-}
-
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-const INPUT_CLASS =
-  "border border-gray-300 dark:border-gray-500 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
 
 interface TodateFormProps {
   tags: TagsType;
@@ -326,199 +307,14 @@ const TodateForm = ({
 
   const tagIds = Object.keys(tags);
 
-  /* ─── shared helpers that render date tab contents ─── */
-
-  const compactRowClass = "flex items-center justify-between gap-2";
-  const compactLabelClass = "text-xs font-medium text-gray-600 dark:text-gray-400 shrink-0 w-10";
-  const compactInputClass = `flex-1 min-w-0 px-2 py-1.5 ${INPUT_CLASS}`;
-
-  const schoolPanel = (
-    prefix: string,
-    grade: number, setGrade: (n: number) => void,
-    per: number, setPer: (n: number) => void,
-    ri: number | undefined, setRi: (n: number | undefined) => void
-  ) => {
-    if (!schoolStartDate) {
-      const placeholder = (
-        <div id={`panel-${prefix}school`} role="tabpanel" aria-labelledby={`tab-${prefix}school`}
-          className={`${compact ? 'h-full' : ''} flex flex-col items-center justify-center gap-2 py-3`}>
-          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            School data is not configured yet.
-          </p>
-          {onOpenSchoolData && (
-            <button type="button" onClick={onOpenSchoolData}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer">
-              Set up school data
-            </button>
-          )}
-        </div>
-      );
-      return placeholder;
-    }
-
-    const pt = schoolStartDate.periodType ?? "quarter";
-    const skippedG = schoolStartDate.skippedGrades ?? [];
-    const repeatedG = schoolStartDate.repeatedGrades ?? [];
-    const maxPV = periodCount(pt);
-    const gradeSkippedV = skippedG.includes(grade);
-    const gradeRepeatedV = repeatedG.includes(grade);
-    const options: { period: number; repeatedInstance?: number; label: string }[] = [];
-    if (!gradeSkippedV) {
-      if (gradeRepeatedV) {
-        Array.from({ length: maxPV }, (_, i) => i + 1).forEach((n) => options.push({ period: n, repeatedInstance: 1, label: periodLabel(pt, n) }));
-        Array.from({ length: maxPV }, (_, i) => i + 1).forEach((n) => options.push({ period: n, repeatedInstance: 2, label: `${periodLabel(pt, n)} (2nd)` }));
-      } else {
-        Array.from({ length: maxPV }, (_, i) => i + 1).forEach((n) => options.push({ period: n, label: periodLabel(pt, n) }));
-      }
-    }
-    const curOpt = options.find((o) => o.period === per && (o.repeatedInstance ?? 1) === (ri ?? 1));
-    const valStr = curOpt ? `${curOpt.period}-${curOpt.repeatedInstance ?? 1}` : options[0] ? `${options[0].period}-${options[0].repeatedInstance ?? 1}` : "";
-
-    if (compact) {
-      return (
-        <div id={`panel-${prefix}school`} role="tabpanel" aria-labelledby={`tab-${prefix}school`} className="h-full flex flex-col justify-evenly">
-          <div className={compactRowClass}>
-            <label htmlFor={`${prefix}grade`} className={compactLabelClass}>Grade</label>
-            <input id={`${prefix}grade`} type="number" min={1} max={30} value={grade}
-              onChange={(e) => { const v = Math.max(1, Number(e.target.value) || 1); setGrade(v); if (skippedG.includes(v)) { setPer(1); setRi(undefined); } }}
-              className={compactInputClass} aria-label={`${prefix ? 'End g' : 'G'}rade`} />
-          </div>
-          <div className={compactRowClass}>
-            <label htmlFor={`${prefix}unit`} className={compactLabelClass}>Unit</label>
-            <select id={`${prefix}unit`} value={valStr}
-              onChange={(e) => { const [p, r] = e.target.value.split("-").map(Number); setPer(p); setRi(r > 1 ? r : undefined); }}
-              disabled={gradeSkippedV || options.length === 0}
-              className={compactInputClass} aria-label={gradeSkippedV ? "No units (grade skipped)" : `${prefix ? 'End u' : 'U'}nit`}>
-              {options.length === 0 && <option value="">—</option>}
-              {options.map((o) => <option key={`${o.period}-${o.repeatedInstance ?? 1}`} value={`${o.period}-${o.repeatedInstance ?? 1}`}>{o.label}</option>)}
-            </select>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div id={`panel-${prefix}school`} role="tabpanel" aria-labelledby={`tab-${prefix}school`} className="flex flex-wrap gap-2 items-center">
-        <label htmlFor={`${prefix}grade`} className="text-sm text-gray-700 dark:text-gray-300">Grade</label>
-        <input id={`${prefix}grade`} type="number" min={1} max={30} value={grade}
-          onChange={(e) => { const v = Math.max(1, Number(e.target.value) || 1); setGrade(v); if (skippedG.includes(v)) { setPer(1); setRi(undefined); } }}
-          className={`w-14 px-2 py-2 ${INPUT_CLASS}`} aria-label={`${prefix ? 'End g' : 'G'}rade`} />
-        <label htmlFor={`${prefix}unit`} className="text-sm text-gray-700 dark:text-gray-300">Unit</label>
-        <select id={`${prefix}unit`} value={valStr}
-          onChange={(e) => { const [p, r] = e.target.value.split("-").map(Number); setPer(p); setRi(r > 1 ? r : undefined); }}
-          disabled={gradeSkippedV || options.length === 0}
-          className={`px-2 py-2 ${INPUT_CLASS}`} aria-label={gradeSkippedV ? "No units (grade skipped)" : `${prefix ? 'End u' : 'U'}nit`}>
-          {options.length === 0 && <option value="">—</option>}
-          {options.map((o) => <option key={`${o.period}-${o.repeatedInstance ?? 1}`} value={`${o.period}-${o.repeatedInstance ?? 1}`}>{o.label}</option>)}
-        </select>
-      </div>
-    );
-  };
-
-  const calendarPanel = (
-    prefix: string,
-    yr: number, setYr: (n: number) => void,
-    mo: number, setMo: (n: number) => void,
-    dy: number, setDy: (n: number) => void,
-    ct: string, setCt: (s: string) => void
-  ) => {
-    const effMo = mo > 0 ? mo : 1;
-    const dim = new Date(yr, effMo, 0).getDate();
-    const clampedDay = dy > 0 ? Math.min(dy, dim) : dy;
-    if (clampedDay !== dy && dy > 0) {
-      queueMicrotask(() => setDy(clampedDay));
-    }
-
-    const handleYearChange = (newYr: number) => {
-      setYr(newYr);
-      if (dy > 0 && mo > 0) {
-        const newDim = new Date(newYr, mo, 0).getDate();
-        if (dy > newDim) setDy(newDim);
-      }
-    };
-
-    const handleMonthChange = (newMo: number) => {
-      setMo(newMo);
-      if (dy > 0 && newMo > 0) {
-        const newDim = new Date(yr, newMo, 0).getDate();
-        if (dy > newDim) setDy(newDim);
-      }
-      if (newMo <= 0) { setDy(0); setCt(""); }
-    };
-
-    if (compact) {
-      return (
-        <div id={`panel-${prefix}calendar`} role="tabpanel" aria-labelledby={`tab-${prefix}calendar`} className="h-full flex flex-col justify-evenly">
-          <div className={compactRowClass}>
-            <label htmlFor={`${prefix}cal-year`} className={compactLabelClass}>Year</label>
-            <input id={`${prefix}cal-year`} type="number" min={1990} max={currentYear + 20} value={yr}
-              onChange={(e) => handleYearChange(Number(e.target.value) || currentYear)}
-              className={compactInputClass} aria-label={`${prefix ? 'End y' : 'Y'}ear`} />
-          </div>
-          <div className={compactRowClass}>
-            <label htmlFor={`${prefix}cal-month`} className={compactLabelClass}>Month</label>
-            <select id={`${prefix}cal-month`} value={mo}
-              onChange={(e) => handleMonthChange(Number(e.target.value))}
-              className={compactInputClass} aria-label={`${prefix ? 'End m' : 'M'}onth`}>
-              <option value={0}>—</option>
-              {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-            </select>
-          </div>
-          <div className={compactRowClass}>
-            <label htmlFor={`${prefix}cal-day`} className={compactLabelClass}>Day</label>
-            <input id={`${prefix}cal-day`} type="number" min={0} max={dim} value={clampedDay || ""} placeholder="—"
-              disabled={mo <= 0}
-              onChange={(e) => { const v = e.target.value === "" ? 0 : Math.max(0, Math.min(dim, Number(e.target.value) || 0)); setDy(v); if (v === 0) setCt(""); }}
-              className={compactInputClass} aria-label={`${prefix ? 'End d' : 'D'}ay`} />
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div id={`panel-${prefix}calendar`} role="tabpanel" aria-labelledby={`tab-${prefix}calendar`} className="flex flex-col gap-3">
-        <div className="flex flex-wrap gap-2 items-center">
-          <label htmlFor={`${prefix}cal-year`} className="text-sm text-gray-700 dark:text-gray-300">Year</label>
-          <input id={`${prefix}cal-year`} type="number" min={1990} max={currentYear + 20} value={yr}
-            onChange={(e) => handleYearChange(Number(e.target.value) || currentYear)}
-            className={`w-20 px-2 py-2 ${INPUT_CLASS}`} aria-label={`${prefix ? 'End y' : 'Y'}ear`} />
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <label htmlFor={`${prefix}cal-month`} className="text-sm text-gray-700 dark:text-gray-300">Month</label>
-          <select id={`${prefix}cal-month`} value={mo}
-            onChange={(e) => handleMonthChange(Number(e.target.value))}
-            className={`px-2 py-2 ${INPUT_CLASS}`} aria-label={`${prefix ? 'End m' : 'M'}onth`}>
-            <option value={0}>—</option>
-            {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-          </select>
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <label htmlFor={`${prefix}cal-day`} className="text-sm text-gray-700 dark:text-gray-300">Day</label>
-          <input id={`${prefix}cal-day`} type="number" min={0} max={dim} value={clampedDay || ""} placeholder="—"
-            disabled={mo <= 0}
-            onChange={(e) => { const v = e.target.value === "" ? 0 : Math.max(0, Math.min(dim, Number(e.target.value) || 0)); setDy(v); if (v === 0) setCt(""); }}
-            className={`w-14 px-2 py-2 ${INPUT_CLASS}`} aria-label={`${prefix ? 'End d' : 'D'}ay`} />
-        </div>
-        {clampedDay > 0 && (
-          <div className="flex flex-wrap gap-2 items-center">
-            <label htmlFor={`${prefix}cal-time`} className="text-sm text-gray-700 dark:text-gray-300">Time</label>
-            <input id={`${prefix}cal-time`} type="datetime-local" value={ct}
-              onChange={(e) => setCt(e.target.value)}
-              className={`px-2 py-2 ${INPUT_CLASS}`} aria-label={`${prefix ? 'End t' : 'T'}ime`} />
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const dateTabBar = (prefix: string, tab: DateTab, setTab: (t: DateTab) => void) => (
-    <div role="tablist" aria-label={`${prefix ? 'End d' : 'D'}ate format`}
+  const renderDateFormatTabs = (fieldPrefix: string, tab: DateTab, setTab: (t: DateTab) => void) => (
+    <div role="tablist" aria-label={`${fieldPrefix ? 'End d' : 'D'}ate format`}
       className="flex border border-b-0 rounded-t-lg border-gray-300 dark:border-gray-500">
       {DATE_TABS.map((opt) => {
         const sel = tab === opt.value;
         return (
           <button key={opt.value} type="button" role="tab" aria-selected={sel}
-            aria-controls={`panel-${prefix}${opt.value}`} id={`tab-${prefix}${opt.value}`}
+            aria-controls={`panel-${fieldPrefix}${opt.value}`} id={`tab-${fieldPrefix}${opt.value}`}
             tabIndex={sel ? 0 : -1} onClick={() => setTab(opt.value)}
             className={`flex-1 min-w-0 px-2 ${compact ? 'py-1 text-xs' : 'py-2 text-sm'} font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
               sel ? "border-blue-600 text-blue-600 dark:text-blue-400"
@@ -540,30 +336,82 @@ const TodateForm = ({
 
   if (compact) {
     const endDateBlock = (
-      <div className="flex flex-col">
-        {dateTabBar('end-', endDateTab, setEndDateTab)}
-        <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg px-2 pt-1.5 pb-3 ${datePanelH}`}>
-          {endDateTab === "school" && schoolPanel('end-', schoolYearEnd, setSchoolYearEnd, periodEnd, setPeriodEnd, repeatedInstanceEnd, setRepeatedInstanceEnd)}
-          {endDateTab === "calendar" && calendarPanel('end-', yearEnd, setYearEnd, monthEnd, setMonthEnd, dayEnd, setDayEnd, calendarTimeEnd, setCalendarTimeEnd)}
+      <div className="flex flex-col min-w-0 overflow-hidden">
+        {renderDateFormatTabs('end-', endDateTab, setEndDateTab)}
+        <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg px-2 pt-1.5 pb-3 ${datePanelH} min-w-0 overflow-hidden`}>
+          {endDateTab === "school" && (
+            <SchoolYearDatePanel
+              fieldPrefix="end-"
+              grade={schoolYearEnd}
+              setGrade={setSchoolYearEnd}
+              period={periodEnd}
+              setPeriod={setPeriodEnd}
+              repeatedInstance={repeatedInstanceEnd}
+              setRepeatedInstance={setRepeatedInstanceEnd}
+              schoolStartDate={schoolStartDate}
+              compact={compact ?? false}
+              onOpenSchoolData={onOpenSchoolData}
+            />
+          )}
+          {endDateTab === "calendar" && (
+            <CalendarDatePanel
+              fieldPrefix="end-"
+              year={yearEnd}
+              setYear={setYearEnd}
+              month={monthEnd}
+              setMonth={setMonthEnd}
+              day={dayEnd}
+              setDay={setDayEnd}
+              timeValue={calendarTimeEnd}
+              setTimeValue={setCalendarTimeEnd}
+              compact={compact ?? false}
+            />
+          )}
         </div>
       </div>
     );
 
     const startDateBlock = (
-      <div className="flex flex-col">
-        {dateTabBar('', dateTab, setDateTab)}
-        <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg px-2 pt-1.5 pb-3 ${datePanelH}`}>
-          {dateTab === "school" && schoolPanel('', schoolYear, setSchoolYear, period, setPeriod, repeatedInstance, setRepeatedInstance)}
-          {dateTab === "calendar" && calendarPanel('', year, setYear, month, setMonth, day, setDay, calendarTime, setCalendarTime)}
+      <div className="flex flex-col min-w-0 overflow-hidden">
+        {renderDateFormatTabs('', dateTab, setDateTab)}
+        <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg px-2 pt-1.5 pb-3 ${datePanelH} min-w-0 overflow-hidden`}>
+          {dateTab === "school" && (
+            <SchoolYearDatePanel
+              fieldPrefix=""
+              grade={schoolYear}
+              setGrade={setSchoolYear}
+              period={period}
+              setPeriod={setPeriod}
+              repeatedInstance={repeatedInstance}
+              setRepeatedInstance={setRepeatedInstance}
+              schoolStartDate={schoolStartDate}
+              compact={compact ?? false}
+              onOpenSchoolData={onOpenSchoolData}
+            />
+          )}
+          {dateTab === "calendar" && (
+            <CalendarDatePanel
+              fieldPrefix=""
+              year={year}
+              setYear={setYear}
+              month={month}
+              setMonth={setMonth}
+              day={day}
+              setDay={setDay}
+              timeValue={calendarTime}
+              setTimeValue={setCalendarTime}
+              compact={compact ?? false}
+            />
+          )}
         </div>
       </div>
     );
 
     return (
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2 flex-1 min-h-0">
-        <div className="flex flex-row gap-3 flex-1 min-h-0">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2 flex-1 min-h-0 min-w-0">
+        <div className="flex flex-col @md:flex-row gap-3 flex-1 min-h-0 min-w-0">
           {/* Left: creation fields */}
-          <div className="flex-1 min-w-0 flex flex-col gap-2 overflow-y-auto overscroll-contain">
+          <div className="flex-1 min-w-0 flex flex-col gap-2 overflow-x-hidden overflow-y-auto overscroll-contain">
             {/* Title */}
             <div>
               <label htmlFor="todate-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">Title</label>
@@ -572,8 +420,8 @@ const TodateForm = ({
                 placeholder="Enter title" required autoComplete="off" />
             </div>
 
-            {/* Dates side by side */}
-            <div className="flex flex-row gap-2">
+            {/* Dates: stacked when container narrow, side-by-side when wide (@md+ = 448px) */}
+            <div className="flex flex-col gap-2 @md:flex-row">
               <div className="flex-1 min-w-0" role="group" aria-labelledby="date-format-label">
                 <p id="date-format-label" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">Start</p>
                 {startDateBlock}
@@ -604,8 +452,8 @@ const TodateForm = ({
             </div>
           </div>
 
-          {/* Right: tags column */}
-          <div className="w-44 shrink-0 flex flex-col gap-1.5">
+          {/* Right: tags column — full width when stacked, fixed width when side-by-side */}
+          <div className="w-full @md:w-44 shrink-0 flex flex-col gap-1.5 min-w-0">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Tags <span className="text-gray-500 dark:text-gray-400 text-xs">(optional)</span>
             </span>
@@ -674,7 +522,7 @@ const TodateForm = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col justify-center items-center gap-4 sm:gap-6"
+      className="flex flex-col justify-center items-center gap-4 sm:gap-6 min-w-0 w-full"
     >
       {/* Title */}
       <div className={w}>
@@ -698,10 +546,36 @@ const TodateForm = ({
         <p id="date-format-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           When did this happen?
         </p>
-        {dateTabBar('', dateTab, setDateTab)}
+        {renderDateFormatTabs('', dateTab, setDateTab)}
         <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg ${panelPad} ${datePanelH}`}>
-          {dateTab === "school" && schoolPanel('', schoolYear, setSchoolYear, period, setPeriod, repeatedInstance, setRepeatedInstance)}
-          {dateTab === "calendar" && calendarPanel('', year, setYear, month, setMonth, day, setDay, calendarTime, setCalendarTime)}
+          {dateTab === "school" && (
+            <SchoolYearDatePanel
+              fieldPrefix=""
+              grade={schoolYear}
+              setGrade={setSchoolYear}
+              period={period}
+              setPeriod={setPeriod}
+              repeatedInstance={repeatedInstance}
+              setRepeatedInstance={setRepeatedInstance}
+              schoolStartDate={schoolStartDate}
+              compact={false}
+              onOpenSchoolData={onOpenSchoolData}
+            />
+          )}
+          {dateTab === "calendar" && (
+            <CalendarDatePanel
+              fieldPrefix=""
+              year={year}
+              setYear={setYear}
+              month={month}
+              setMonth={setMonth}
+              day={day}
+              setDay={setDay}
+              timeValue={calendarTime}
+              setTimeValue={setCalendarTime}
+              compact={false}
+            />
+          )}
         </div>
       </div>
 
@@ -715,11 +589,37 @@ const TodateForm = ({
             End date
           </label>
         </div>
-        {hasEndDate && dateTabBar('end-', endDateTab, setEndDateTab)}
+        {hasEndDate && renderDateFormatTabs('end-', endDateTab, setEndDateTab)}
         {hasEndDate && (
           <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg ${panelPad} ${datePanelH}`}>
-            {endDateTab === "school" && schoolPanel('end-', schoolYearEnd, setSchoolYearEnd, periodEnd, setPeriodEnd, repeatedInstanceEnd, setRepeatedInstanceEnd)}
-            {endDateTab === "calendar" && calendarPanel('end-', yearEnd, setYearEnd, monthEnd, setMonthEnd, dayEnd, setDayEnd, calendarTimeEnd, setCalendarTimeEnd)}
+            {endDateTab === "school" && (
+              <SchoolYearDatePanel
+                fieldPrefix="end-"
+                grade={schoolYearEnd}
+                setGrade={setSchoolYearEnd}
+                period={periodEnd}
+                setPeriod={setPeriodEnd}
+                repeatedInstance={repeatedInstanceEnd}
+                setRepeatedInstance={setRepeatedInstanceEnd}
+                schoolStartDate={schoolStartDate}
+                compact={false}
+                onOpenSchoolData={onOpenSchoolData}
+              />
+            )}
+            {endDateTab === "calendar" && (
+              <CalendarDatePanel
+                fieldPrefix="end-"
+                year={yearEnd}
+                setYear={setYearEnd}
+                month={monthEnd}
+                setMonth={setMonthEnd}
+                day={dayEnd}
+                setDay={setDayEnd}
+                timeValue={calendarTimeEnd}
+                setTimeValue={setCalendarTimeEnd}
+                compact={false}
+              />
+            )}
           </div>
         )}
       </div>

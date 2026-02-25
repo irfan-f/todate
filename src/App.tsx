@@ -4,7 +4,7 @@ import type { TodateType, TodatesType, TagType, TagsType, SchoolStartDate } from
 import TodateForm from './components/TodateForm';
 import TagForm from './components/TagForm';
 import SchoolDataForm from './components/SchoolDataForm';
-import TodateLine from './components/TodateLine';
+import TimelineWorkspace from './components/TimelineWorkspace';
 import Modal from './components/Modal';
 import Icon from './components/Icon';
 import TimelineFilters from './components/TimelineFilters';
@@ -15,6 +15,7 @@ import starIcon from './assets/star.svg?raw';
 import tagIcon from './assets/tag.svg?raw';
 import schoolIcon from './assets/school.svg?raw';
 import { useTheme } from './hooks/useTheme';
+import { useClickOutside } from './hooks/useClickOutside';
 import ThemeToggle from './components/ThemeToggle';
 function getYearFromTodate(todate: TodateType): number {
   return new Date(todate.date).getFullYear();
@@ -68,14 +69,12 @@ function App() {
   endYearRef.current = timelineEndYear;
 
   // Sync timeline span when the data range changes (e.g. sample data loads, first todate added)
-  const prevMinRef = useRef(minYear);
-  const prevMaxRef = useRef(maxYear);
+  const previousDataRangeRef = useRef({ min: minYear, max: maxYear });
   useEffect(() => {
-    if (minYear !== prevMinRef.current || maxYear !== prevMaxRef.current) {
+    if (minYear !== previousDataRangeRef.current.min || maxYear !== previousDataRangeRef.current.max) {
       setTimelineStartYear(minYear);
       setTimelineEndYear(maxYear);
-      prevMinRef.current = minYear;
-      prevMaxRef.current = maxYear;
+      previousDataRangeRef.current = { min: minYear, max: maxYear };
     }
   }, [minYear, maxYear]);
 
@@ -87,21 +86,13 @@ function App() {
   const filtersRef = useRef<HTMLDivElement>(null);
   const fabAreaRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (fabAreaRef.current && !fabAreaRef.current.contains(e.target as Node)) {
-        setFabOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [fabOpen]);
+  useClickOutside(fabAreaRef, () => setFabOpen(false), fabOpen);
 
   const MAX_SPAN = 200;
-  const rawStart = Math.min(timelineStartYear, timelineEndYear);
-  const rawEnd = Math.max(timelineStartYear, timelineEndYear);
-  const effectiveStartYear = rawEnd - rawStart > MAX_SPAN ? rawEnd - MAX_SPAN : rawStart;
-  const effectiveEndYear = rawEnd;
+  const clampedStartYear = Math.min(timelineStartYear, timelineEndYear);
+  const clampedEndYear = Math.max(timelineStartYear, timelineEndYear);
+  const effectiveStartYear = clampedEndYear - clampedStartYear > MAX_SPAN ? clampedEndYear - MAX_SPAN : clampedStartYear;
+  const effectiveEndYear = clampedEndYear;
 
   const filtered = useMemo(() => {
     let list = todatesList;
@@ -219,9 +210,9 @@ function App() {
     });
   }, []);
 
-  const defaultPanelContent = (
+  const inlineCreateForm = (
     <div className="h-full flex flex-col gap-3 p-3">
-      <div className="flex-1 min-h-0 flex flex-col rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3">
+      <div className="flex-1 min-h-0 flex flex-col rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 @container min-w-0 overflow-x-hidden">
         <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 shrink-0">Create Todate</h2>
         <TodateForm
           key={`todate-inline-${formResetKey}`}
@@ -348,14 +339,14 @@ function App() {
       </div>
 
       <main id="main-content" className="flex-1 min-h-0 flex flex-col bg-stone-100 dark:bg-gray-800" role="main">
-        <TodateLine
+        <TimelineWorkspace
           list={filtered}
           totalCount={totalCount}
           schoolStartDate={schoolStartDate}
           onEditTodate={openEditTodate}
           minYear={effectiveStartYear}
           maxYear={effectiveEndYear}
-          defaultContent={defaultPanelContent}
+          defaultContent={inlineCreateForm}
           onActiveChange={setHasActiveTodate}
           onSpanChange={handleSpanChange}
         />

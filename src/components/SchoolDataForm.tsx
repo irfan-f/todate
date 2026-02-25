@@ -1,19 +1,12 @@
 import { useState } from "react";
 import type { SchoolStartDate, SchoolPeriodType } from "../types";
+import { MONTHS, INPUT_CLASS } from "../constants";
 
 const PERIOD_TYPES: { value: SchoolPeriodType; label: string }[] = [
   { value: "quarter", label: "Quarter" },
   { value: "trimester", label: "Trimester" },
   { value: "semester", label: "Semester" },
 ];
-
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-const INPUT_CLASS =
-  "border border-gray-300 dark:border-gray-500 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
 
 const currentYear = new Date().getFullYear();
 
@@ -116,7 +109,7 @@ export default function SchoolDataForm({ initialData, onSave }: SchoolDataFormPr
         <div>
           <label htmlFor="school-month" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start month</label>
           <select id="school-month" value={month} onChange={(e) => setMonth(Number(e.target.value))}
-            className={`px-3 py-2 ${INPUT_CLASS}`} aria-label="Month when school year starts">
+            className={`pl-3 pr-7 py-2 ${INPUT_CLASS}`} aria-label="Month when school year starts">
             {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
           </select>
         </div>
@@ -130,7 +123,7 @@ export default function SchoolDataForm({ initialData, onSave }: SchoolDataFormPr
       <div className="w-11/12">
         <label htmlFor="school-period-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Academic calendar</label>
         <select id="school-period-type" value={periodType} onChange={(e) => setPeriodType(e.target.value as SchoolPeriodType)}
-          className={`px-3 py-2 ${INPUT_CLASS}`} aria-label="Academic calendar (quarter, trimester, semester)">
+          className={`pl-3 pr-7 py-2 ${INPUT_CLASS}`} aria-label="Academic calendar (quarter, trimester, semester)">
           {PERIOD_TYPES.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
       </div>
