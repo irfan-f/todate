@@ -22,8 +22,8 @@ const TimelineWorkspace = ({
   defaultContent,
   onActiveChange,
   onSpanChange,
-  isRightPanelCollapsed = false,
   onRightPanelCollapsedChange,
+  isRightPanelCollapsed = false,
   datasetsPanelCollapsed = false,
   onDatasetsPanelCollapsedChange,
 }: {
@@ -147,11 +147,13 @@ const TimelineWorkspace = ({
       : 'No todates match the current filters.';
 
   const rightContent = activeTodate ? (
-    <Todate
-      data={activeTodate}
-      schoolStartDate={schoolStartDate}
-      onEdit={onEditTodate}
-    />
+    isRightPanelCollapsed ? null : (
+      <Todate
+        data={activeTodate}
+        schoolStartDate={schoolStartDate}
+        onEdit={onEditTodate}
+      />
+    )
   ) : (
     <>
       <div className="md:hidden h-full flex items-center justify-center p-4">
@@ -159,7 +161,7 @@ const TimelineWorkspace = ({
           {isEmpty ? emptyMessage : 'Hover or tap an item on the timeline to view details.'}
         </p>
       </div>
-      {defaultContent && (
+      {defaultContent && !isRightPanelCollapsed && (
         <div className="hidden md:flex flex-col h-full">
           {defaultContent}
         </div>
