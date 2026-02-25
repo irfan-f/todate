@@ -44,7 +44,8 @@ function App() {
   useEffect(() => {
     if (sampleLoaded || !activeDataset) return;
     if (import.meta.env.DEV && import.meta.env.VITE_SAMPLE_DATA === 'true') {
-      import(/* @vite-ignore */ '../sampleData')
+      const sampleDataPath = '../sampleData';
+      import(/* @vite-ignore */ sampleDataPath)
         .then((mod) => {
           setStore((prev) => {
             const id = crypto.randomUUID();
