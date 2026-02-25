@@ -21,6 +21,7 @@ const TimelineWorkspace = ({
   maxYear,
   defaultContent,
   onActiveChange,
+  onRightPanelCollapsedChange,
   onSpanChange,
   isRightPanelCollapsed = false,
   onRightPanelCollapsedChange,
@@ -35,6 +36,7 @@ const TimelineWorkspace = ({
   maxYear?: number;
   defaultContent?: React.ReactNode;
   onActiveChange?: (hasActive: boolean) => void;
+  onRightPanelCollapsedChange?: (collapsed: boolean) => void;
   onSpanChange?: (startYear: number, endYear: number) => void;
   isRightPanelCollapsed?: boolean;
   onRightPanelCollapsedChange?: (collapsed: boolean) => void;
