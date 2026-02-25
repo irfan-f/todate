@@ -16,8 +16,6 @@ dist-ssr
 sampleData.ts
 
 # Cursor and local/sensitive (do not commit unless intentional)
-.cursor/
-AGENTS.md
 .env
 .env.*
 *.pem
