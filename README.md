@@ -1,1 +1,3 @@
-Update to utilize a db, what's the best HIPPA compliant, low cost, least security vulnerability solution? Ideally I don't even have to stand something else up. Would users be needed or could we do session based and allow exporting/importing of data through hashed code. If we do start storing user based data Are we liable at all if I just mention that this data could be breached and shouldn't be confidential information when users go to save or something
+Check svg patterns
+Update styling
+Make drive integration full-circle
