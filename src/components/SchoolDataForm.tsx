@@ -1,19 +1,12 @@
 import { useState } from "react";
 import type { SchoolStartDate, SchoolPeriodType } from "../types";
+import { MONTHS, INPUT_CLASS } from "../constants";
 
 const PERIOD_TYPES: { value: SchoolPeriodType; label: string }[] = [
   { value: "quarter", label: "Quarter" },
   { value: "trimester", label: "Trimester" },
   { value: "semester", label: "Semester" },
 ];
-
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-const INPUT_CLASS =
-  "border border-gray-300 dark:border-gray-500 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
 
 const currentYear = new Date().getFullYear();
 

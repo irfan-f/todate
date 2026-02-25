@@ -1,3 +1,4 @@
+import { DEFAULT_TAG_COLOR } from '../constants';
 import type { TodateType, SchoolStartDate } from '../types';
 import { formatDateDisplay } from '../utils/date';
 import Icon from './Icon';
@@ -8,8 +9,6 @@ interface TodateProps {
   schoolStartDate?: SchoolStartDate | null;
   onEdit?: (data: TodateType) => void;
 }
-
-const FALLBACK_TAG_COLOR = '#9ca3af'; // gray-400
 
 const Todate = ({ data, schoolStartDate = null, onEdit }: TodateProps) => {
   const dateTime = new Date(data.date);
@@ -87,7 +86,7 @@ const Todate = ({ data, schoolStartDate = null, onEdit }: TodateProps) => {
             >
               <span
                 className="inline-block w-3 h-3 rounded-full mr-2 shrink-0"
-                style={{ backgroundColor: tag?.color ?? FALLBACK_TAG_COLOR }}
+                style={{ backgroundColor: tag?.color ?? DEFAULT_TAG_COLOR }}
                 aria-hidden
               />
               {tag?.name ?? 'Tag'}

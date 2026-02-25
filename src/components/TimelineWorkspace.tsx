@@ -1,43 +1,18 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import type { TodateType, SchoolStartDate } from '../types';
-import { dateValueToIso } from '../utils/date';
+import { todateToBarItem } from '../utils/timelineBar';
 import TimelineBar, { type TimelineBarItem } from './TimelineBar';
 import Todate from './Todate';
 import Icon from './Icon';
 import rightPanelCloseIcon from '../assets/right-panel-close.svg?raw';
 import rightPanelOpenIcon from '../assets/right-panel-open.svg?raw';
 
-const FALLBACK_TAG_COLOR = '#9ca3af'; // gray-400
-
 const TIMELINE_WIDTH_STORAGE_KEY = 'todate-timeline-width-pct';
 const MIN_TIMELINE_PCT = 15;
 const MAX_TIMELINE_PCT = 100;
 const DEFAULT_TIMELINE_PCT = 25;
 
-/**
- * Convert a TodateType into a TimelineBarItem for the vertical timeline.
- * Uses `date` (always set) for startDate. For endDate, converts `endDateDisplay`
- * through dateValueToIso when present.
- */
-function todateToBarItem(
-  todate: TodateType,
-  schoolStartDate: SchoolStartDate | null
-): TimelineBarItem {
-  let endDate: string | undefined;
-  if (todate.endDateDisplay) {
-    endDate = dateValueToIso(todate.endDateDisplay, schoolStartDate);
-  }
-  return {
-    id: todate._id,
-    title: todate.title,
-    startDate: todate.date,
-    endDate,
-    comment: todate.comment,
-    color: todate.tags[0]?.color ?? FALLBACK_TAG_COLOR,
-  };
-}
-
-const TodateLine = ({
+const TimelineWorkspace = ({
   list,
   schoolStartDate,
   totalCount = 0,
@@ -72,11 +47,11 @@ const TodateLine = ({
       : DEFAULT_TIMELINE_PCT;
   });
   const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
-  const effectiveWidthPct = isRightPanelCollapsed ? 100 : timelineWidthPct;
-  const timelineWidthStyle = { ['--timeline-width' as string]: `${effectiveWidthPct}%` };
+  const timelineBarWidthPct = isRightPanelCollapsed ? 100 : timelineWidthPct;
+  const timelineBarWidthStyle = { ['--timeline-width' as string]: `${timelineBarWidthPct}%` };
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, widthPct: 0 });
-  const lastWidthPctRef = useRef(timelineWidthPct);
+  const lastSavedWidthPctRef = useRef(timelineWidthPct);
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -84,7 +59,7 @@ const TodateLine = ({
     if (!el) return;
     const widthToUse = isRightPanelCollapsed ? 100 : timelineWidthPct;
     dragStartRef.current = { x: e.clientX, widthPct: widthToUse };
-    lastWidthPctRef.current = widthToUse;
+    lastSavedWidthPctRef.current = widthToUse;
     if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
     setIsDragging(true);
   }, [timelineWidthPct, isRightPanelCollapsed]);
@@ -102,13 +77,13 @@ const TodateLine = ({
       const deltaPx = e.clientX - dragStartRef.current.x;
       const deltaPct = (deltaPx / rect.width) * 100;
       const next = Math.min(MAX_TIMELINE_PCT, Math.max(MIN_TIMELINE_PCT, dragStartRef.current.widthPct + deltaPct));
-      lastWidthPctRef.current = next;
+      lastSavedWidthPctRef.current = next;
       setTimelineWidthPct(next);
     };
     const onUp = () => {
       setIsDragging(false);
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(TIMELINE_WIDTH_STORAGE_KEY, String(lastWidthPctRef.current));
+        localStorage.setItem(TIMELINE_WIDTH_STORAGE_KEY, String(lastSavedWidthPctRef.current));
       }
     };
     window.addEventListener('mousemove', onMove);
@@ -144,10 +119,11 @@ const TodateLine = ({
 
   const activeId = hoveredId ?? selectedId;
   const activeTodate = activeId ? todateMap.get(activeId) ?? null : null;
+  const hasActive = activeTodate != null;
 
   useEffect(() => {
-    onActiveChange?.(activeTodate != null);
-  }, [activeTodate != null, onActiveChange]);
+    onActiveChange?.(hasActive);
+  }, [hasActive, onActiveChange]);
 
   const handleHover = (item: TimelineBarItem | null) => {
     setHoveredId(item?.id ?? null);
@@ -171,13 +147,11 @@ const TodateLine = ({
     />
   ) : (
     <>
-      {/* Small screens: placeholder / empty message */}
       <div className="md:hidden h-full flex items-center justify-center p-4">
         <p className="text-gray-400 dark:text-gray-500 text-sm">
           {isEmpty ? emptyMessage : 'Hover or tap an item on the timeline to view details.'}
         </p>
       </div>
-      {/* md+: inline forms */}
       {defaultContent && (
         <div className="hidden md:flex flex-col h-full">
           {defaultContent}
@@ -190,10 +164,9 @@ const TodateLine = ({
     <div
       ref={containerRef}
       className={`relative flex-1 min-h-0 w-full flex flex-row ${isDragging ? 'select-none' : ''}`}
-      style={timelineWidthStyle}
-      aria-label="Todate timeline"
+      style={timelineBarWidthStyle}
+      aria-label="Timeline workspace"
     >
-      {/* Timeline bar column — fixed 25% on mobile; draggable width on md+; smooth transition */}
       <div
         className="relative flex flex-col min-h-0 shrink-0 w-1/4 md:w-(--timeline-width) transition-[width] duration-200 ease-out"
       >
@@ -207,7 +180,6 @@ const TodateLine = ({
           onSpanChange={onSpanChange}
           className="flex-1 min-h-0 bg-stone-50 dark:bg-gray-900/50"
         />
-        {/* Toggle right panel: top right of timeline column (left of draggable border), desktop only */}
         <button
           type="button"
           onClick={toggleRightPanel}
@@ -221,7 +193,6 @@ const TodateLine = ({
         </button>
       </div>
 
-      {/* Resize handle: desktop only when panel is open */}
       {!isRightPanelCollapsed && (
         <div
           role="separator"
@@ -232,7 +203,6 @@ const TodateLine = ({
         />
       )}
 
-      {/* Right content area — smooth transition when collapsing; overflow-x-hidden prevents scrollbar flicker during resize */}
       <div
         className={`flex-1 min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain transition-[flex-basis] duration-200 ease-out ${activeTodate ? 'pb-24 sm:pb-28' : 'pb-24 md:pb-0'}`}
       >
@@ -242,4 +212,4 @@ const TodateLine = ({
   );
 };
 
-export default TodateLine;
+export default TimelineWorkspace;

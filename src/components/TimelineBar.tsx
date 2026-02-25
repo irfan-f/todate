@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import { DEFAULT_TIMELINE_COLOR } from '../constants';
 
 export interface TimelineBarItem {
   id: string;
@@ -24,28 +25,27 @@ function dateToFractionalYear(iso: string): number {
  * land in lane 0 (adjacent to the axis).
  */
 function assignLanes(
-  items: Array<{ start: number; end: number; id: string }>
+  items: { start: number; end: number; id: string }[]
 ): Map<string, number> {
   const sorted = [...items].sort((a, b) => a.start - b.start);
-  const laneOf: Map<string, number> = new Map();
-  const laneEnd: number[] = [];
+  const itemLaneMap = new Map<string, number>();
+  const laneEndYears: number[] = [];
 
   for (const item of sorted) {
     let lane = 0;
-    while (lane < laneEnd.length && laneEnd[lane] > item.start) {
+    while (lane < laneEndYears.length && laneEndYears[lane] > item.start) {
       lane++;
     }
-    if (lane === laneEnd.length) {
-      laneEnd.push(item.end);
+    if (lane === laneEndYears.length) {
+      laneEndYears.push(item.end);
     } else {
-      laneEnd[lane] = item.end;
+      laneEndYears[lane] = item.end;
     }
-    laneOf.set(item.id, lane);
+    itemLaneMap.set(item.id, lane);
   }
-  return laneOf;
+  return itemLaneMap;
 }
 
-const FALLBACK_COLOR = '#6b7280'; // gray-500
 const PADDING_Y = 18;
 const AXIS_X = 28;
 const MIN_LANE_WIDTH = 18;
@@ -66,8 +66,8 @@ interface TimelineBarProps {
 
 export default function TimelineBar({
   items,
-  minYear: propMinYear,
-  maxYear: propMaxYear,
+  minYear: incomingMinYear,
+  maxYear: incomingMaxYear,
   className = '',
   onHover,
   onSelect,
@@ -104,20 +104,20 @@ export default function TimelineBar({
   }, [items]);
 
   const range = useMemo(() => {
-    let min = propMinYear ?? new Date().getFullYear();
-    let max = propMaxYear ?? new Date().getFullYear();
+    let min = incomingMinYear ?? new Date().getFullYear();
+    let max = incomingMaxYear ?? new Date().getFullYear();
     if (items.length > 0) {
       const years = items.flatMap((i) => {
         const s = dateToFractionalYear(i.startDate);
         const e = i.endDate ? dateToFractionalYear(i.endDate) : s;
         return [s, e];
       });
-      if (!propMinYear) min = Math.floor(Math.min(...years));
-      if (!propMaxYear) max = Math.ceil(Math.max(...years));
+      if (!incomingMinYear) min = Math.floor(Math.min(...years));
+      if (!incomingMaxYear) max = Math.ceil(Math.max(...years));
     }
     if (min === max) max = min + 1;
     return { minYear: min, maxYear: max };
-  }, [items, propMinYear, propMaxYear]);
+  }, [items, incomingMinYear, incomingMaxYear]);
 
   const laneMap = useMemo(() => {
     return assignLanes(
@@ -131,8 +131,8 @@ export default function TimelineBar({
 
   const laneCount = withEnd.length === 0 ? 0 : Math.max(...Array.from(laneMap.values())) + 1;
 
-  // Y maps fractional year → pixel (top = minYear, bottom = maxYear)
-  const yPos = (year: number) =>
+  // Maps fractional year → pixel Y (top = minYear, bottom = maxYear)
+  const yearToY = (year: number) =>
     PADDING_Y + ((year - range.minYear) / (range.maxYear - range.minYear)) * (height - 2 * PADDING_Y);
 
   // X: lanes start after the axis — only bracket items need lanes (no-end items don't)
@@ -201,7 +201,7 @@ export default function TimelineBar({
   const sortedItems = useMemo(() => {
     const allItems = items.map((item) => ({
       item,
-      y: yPos(dateToFractionalYear(item.startDate)),
+      y: yearToY(dateToFractionalYear(item.startDate)),
     }));
     allItems.sort((a, b) => a.y - b.y);
     return allItems.map((a) => a.item);
@@ -237,12 +237,12 @@ export default function TimelineBar({
 
   // --- Pinch / Ctrl+scroll gesture for timeline span ---
   // Accumulate fractional changes so small spans still respond to gestures
-  const fracMinRef = useRef(propMinYear ?? range.minYear);
-  const fracMaxRef = useRef(propMaxYear ?? range.maxYear);
+  const fracMinRef = useRef(incomingMinYear ?? range.minYear);
+  const fracMaxRef = useRef(incomingMaxYear ?? range.maxYear);
   useEffect(() => {
-    fracMinRef.current = propMinYear ?? range.minYear;
-    fracMaxRef.current = propMaxYear ?? range.maxYear;
-  }, [propMinYear, propMaxYear, range.minYear, range.maxYear]);
+    fracMinRef.current = incomingMinYear ?? range.minYear;
+    fracMaxRef.current = incomingMaxYear ?? range.maxYear;
+  }, [incomingMinYear, incomingMaxYear, range.minYear, range.maxYear]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -293,8 +293,8 @@ export default function TimelineBar({
     const activeTouches = new Map<number, Touch>();
 
     const handleTouchStart = (e: TouchEvent) => {
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        activeTouches.set(e.changedTouches[i].identifier, e.changedTouches[i]);
+      for (const t of e.changedTouches) {
+        activeTouches.set(t.identifier, t);
       }
       if (activeTouches.size === 2) {
         const pts = Array.from(activeTouches.values());
@@ -308,8 +308,8 @@ export default function TimelineBar({
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        activeTouches.set(e.changedTouches[i].identifier, e.changedTouches[i]);
+      for (const t of e.changedTouches) {
+        activeTouches.set(t.identifier, t);
       }
       if (activeTouches.size === 2) {
         e.preventDefault();
@@ -343,8 +343,8 @@ export default function TimelineBar({
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        activeTouches.delete(e.changedTouches[i].identifier);
+      for (const t of e.changedTouches) {
+        activeTouches.delete(t.identifier);
       }
       if (activeTouches.size < 2) lastPinchDist = 0;
       if (activeTouches.size === 1) {
@@ -396,7 +396,7 @@ export default function TimelineBar({
 
         {/* Year tick marks & labels */}
         {yearTicks.map((yr) => {
-          const py = yPos(yr);
+          const py = yearToY(yr);
           return (
             <g key={yr}>
               <line
@@ -427,9 +427,9 @@ export default function TimelineBar({
           const lane = laneMap.get(item.id) ?? 0;
           const left = lanesStartX + lane * laneW + pad;
           const right = left + laneW - pad * 2;
-          const y1 = yPos(startFrac);
-          const y2 = yPos(endFrac);
-          const col = item.color ?? FALLBACK_COLOR;
+          const y1 = yearToY(startFrac);
+          const y2 = yearToY(endFrac);
+          const col = item.color ?? DEFAULT_TIMELINE_COLOR;
           const isActive = activeId === item.id;
           const isSelected = selectedId === item.id;
           return (
@@ -475,8 +475,8 @@ export default function TimelineBar({
         {/* No-end items: dashed lines — rendered last so they sit above brackets */}
         {noEnd.map((item) => {
           const startFrac = dateToFractionalYear(item.startDate);
-          const cy = yPos(startFrac);
-          const col = item.color ?? FALLBACK_COLOR;
+          const cy = yearToY(startFrac);
+          const col = item.color ?? DEFAULT_TIMELINE_COLOR;
           const isActive = activeId === item.id;
           const isSelected = selectedId === item.id;
           return (

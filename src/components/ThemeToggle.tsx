@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
+import { useClickOutside } from '../hooks/useClickOutside';
 import type { Theme } from '../hooks/useTheme';
 import Icon from './Icon';
 import lightModeIcon from '../assets/light_mode.svg?raw';
@@ -21,14 +22,7 @@ export default function ThemeToggle({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [open]);
+  useClickOutside(ref, () => setOpen(false), open);
 
   const listboxId = 'theme-listbox';
 
