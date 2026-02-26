@@ -65,12 +65,12 @@ const Modal = ({
       />
       <div
         ref={panelRef}
-        className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-stone-50 dark:bg-gray-800 rounded-xl shadow-xl p-4 sm:p-6 overflow-hidden focus:outline-none"
+        className="relative w-full max-w-lg max-h-[90vh] flex flex-col bg-surface-panel rounded-3xl shadow-xl p-4 sm:p-6 overflow-hidden focus:outline-none"
       >
         <div className="flex flex-row items-center gap-2 mb-2 shrink-0">
           <h2
             id="modal-title"
-            className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 truncate flex-1"
+            className="text-xl sm:text-2xl font-bold text-on-surface truncate flex-1"
           >
             {title}
           </h2>
@@ -79,7 +79,7 @@ const Modal = ({
             type="button"
             onClick={closeFn}
             aria-label="Close dialog"
-            className="shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer transition-colors"
+            className="btn-icon shrink-0 min-h-[48px] min-w-[48px] rounded-lg"
           >
             <span aria-hidden>×</span>
           </button>

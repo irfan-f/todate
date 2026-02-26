@@ -90,7 +90,7 @@ describe('DatasetsPanel', () => {
         driveMessage={null}
       />
     );
-    expect(screen.getByRole('button', { name: 'Create dataset' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Create new line' })).toBeDefined();
   });
 
   it('hides content when collapsed', () => {
@@ -105,7 +105,7 @@ describe('DatasetsPanel', () => {
         driveMessage={null}
       />
     );
-    expect(screen.queryByRole('button', { name: 'Create dataset' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Create new line' })).toBeNull();
   });
 
   it('toggle toggles collapse state', () => {

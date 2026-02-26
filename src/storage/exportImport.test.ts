@@ -132,9 +132,12 @@ describe('applyImportStrategy', () => {
       schoolStartDate: null,
     };
     const next = exportImport.applyImportStrategy(store, data, 'replace');
-    expect(next.datasets[store.activeId]!.name).toBe('Default');
-    expect(next.datasets[store.activeId]!.todates).toEqual(data.todates);
-    expect(next.datasets[store.activeId]!.tags).toEqual(data.tags);
+    const ds = next.datasets[store.activeId];
+    expect(ds).toBeDefined();
+    if (!ds) return;
+    expect(ds.name).toBe('Default');
+    expect(ds.todates).toEqual(data.todates);
+    expect(ds.tags).toEqual(data.tags);
   });
 
   it('merge: merges todates and tags by id into current dataset', () => {
@@ -155,7 +158,9 @@ describe('applyImportStrategy', () => {
       schoolStartDate: null,
     };
     const next = exportImport.applyImportStrategy(store, data, 'merge');
-    const current = next.datasets[store.activeId]!;
+    const current = next.datasets[store.activeId];
+    expect(current).toBeDefined();
+    if (!current) return;
     expect(Object.keys(current.todates)).toHaveLength(2);
     expect(current.todates.a).toBeDefined();
     expect(current.todates.b).toBeDefined();
@@ -176,8 +181,11 @@ describe('applyImportStrategy', () => {
     expect(Object.keys(next.datasets)).toHaveLength(2);
     expect(next.activeId).not.toBe(store.activeId);
     const newId = next.activeId;
-    expect(next.datasets[newId]!.name).toBe('New From Import');
-    expect(next.datasets[newId]!.todates).toEqual({});
+    const newDs = next.datasets[newId];
+    expect(newDs).toBeDefined();
+    if (!newDs) return;
+    expect(newDs.name).toBe('New From Import');
+    expect(newDs.todates).toEqual({});
   });
 
   it('returns store unchanged when current dataset is missing', () => {

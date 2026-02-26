@@ -1,5 +1,6 @@
-import type { Store, Dataset, TodatesType, TagsType, SchoolStartDate } from '../types';
+import type { Store, Dataset, TodatesType, TagsType, SchoolStartDate, SingleDatasetPayload } from '../types';
 import { isStore, isSingleDatasetPayload } from '../types';
+import { randomUUID } from '../utils/id';
 
 /** Normalized result of parsing an import file: one dataset's content. */
 export interface NormalizedImport {
@@ -25,10 +26,11 @@ export function parseAndValidateImportFile(text: string): ParseImportResult {
   }
 
   if (isStore(parsed)) {
-    const store = parsed as Store;
-    const ids = Object.keys(store.datasets);
+    const ids = Object.keys(parsed.datasets);
     if (ids.length === 0) return { ok: false, error: 'File has no datasets' };
-    const ds = store.datasets[store.activeId] ?? store.datasets[ids[0]!]!;
+    const firstId = ids[0];
+    const ds = parsed.datasets[parsed.activeId] ?? (firstId ? parsed.datasets[firstId] : undefined);
+    if (!ds) return { ok: false, error: 'File has no datasets' };
     return {
       ok: true,
       data: {
@@ -41,11 +43,12 @@ export function parseAndValidateImportFile(text: string): ParseImportResult {
   }
 
   if (isSingleDatasetPayload(parsed)) {
-    const p = parsed as { name?: string; todates: TodatesType; tags: TagsType; schoolStartDate?: SchoolStartDate | null };
+    const p: SingleDatasetPayload = parsed;
+    const trimmed = p.name?.trim() ?? '';
     return {
       ok: true,
       data: {
-        name: p.name?.trim() || 'Imported',
+        name: trimmed ? trimmed : 'Imported',
         todates: p.todates ?? {},
         tags: p.tags ?? {},
         schoolStartDate: p.schoolStartDate ?? null,
@@ -124,7 +127,7 @@ export function applyImportStrategy(
   }
 
   if (strategy === 'add') {
-    const id = crypto.randomUUID();
+    const id = randomUUID();
     const newDs: Dataset = {
       id,
       name: data.name || 'Imported',

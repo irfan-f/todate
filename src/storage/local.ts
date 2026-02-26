@@ -1,11 +1,12 @@
 import type { Store } from '../types'
 import { isStore } from '../types'
+import { randomUUID } from '../utils/id'
 
 const STORAGE_KEY = 'todate-store'
 const DEBOUNCE_MS = 400
 
 function defaultStore(): Store {
-  const id = crypto.randomUUID()
+  const id = randomUUID()
   return {
     activeId: id,
     datasets: {

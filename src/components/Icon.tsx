@@ -1,5 +1,5 @@
 interface IconProps {
-  /** Raw SVG string (e.g. from import './asset.svg?raw') */
+  /** Raw SVG string from icon registry (icons.*) or future CDN fetch */
   src: string;
   className?: string;
   'aria-hidden'?: boolean;

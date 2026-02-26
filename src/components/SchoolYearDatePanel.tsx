@@ -39,14 +39,14 @@ export default function SchoolYearDatePanel({
         aria-labelledby={`tab-${fieldPrefix}school`}
         className={`${compact ? 'h-full' : ''} flex flex-col items-center justify-center gap-2 py-3`}
       >
-        <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+        <p className="text-xs text-muted text-center">
           School data is not configured yet.
         </p>
         {onOpenSchoolData && (
           <button
             type="button"
             onClick={onOpenSchoolData}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg btn-primary text-white transition-colors cursor-pointer"
           >
             Set up school data
           </button>
@@ -88,7 +88,7 @@ export default function SchoolYearDatePanel({
       : '';
 
   const rowClass = compact ? 'flex items-center justify-between gap-2 min-w-0' : '';
-  const labelClass = compact ? 'text-xs font-medium text-gray-600 dark:text-gray-400 shrink-0 w-10' : 'text-sm text-gray-700 dark:text-gray-300';
+  const labelClass = compact ? 'text-xs font-medium text-muted shrink-0 w-10' : 'text-sm text-on-surface';
   const inputClass = compact
     ? `flex-1 min-w-0 px-2 py-1.5 ${INPUT_CLASS}`
     : `w-14 px-2 py-2 ${INPUT_CLASS}`;

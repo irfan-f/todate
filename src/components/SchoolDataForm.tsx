@@ -69,7 +69,7 @@ export default function SchoolDataForm({ initialData, onSave }: SchoolDataFormPr
     ariaAdd: string, ariaRemovePrefix: string
   ) => (
     <div className="flex flex-wrap items-center gap-1.5 w-11/12">
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+      <span className="text-sm font-medium text-on-surface">{label}</span>
       <input
         type="number" min={1} max={30} value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -79,14 +79,14 @@ export default function SchoolDataForm({ initialData, onSave }: SchoolDataFormPr
         aria-label={ariaAdd}
       />
       <button type="button" onClick={() => addToList(value, setValue, list, setList)}
-        className="min-h-[44px] px-3 py-2 text-sm font-medium rounded-lg bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer">
+        className="min-h-[44px] px-3 py-2 text-sm font-medium rounded-lg bg-secondary/80 text-on-surface hover:bg-secondary focus:outline-none focus-visible:ring-1 focus-visible:ring-focus cursor-pointer">
         Add
       </button>
       {list.map((y) => (
-        <span key={y} className="inline-flex items-center gap-0.5 px-3 py-1 text-sm rounded-full bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200">
+        <span key={y} className="inline-flex items-center gap-0.5 px-3 py-1 text-sm rounded-full bg-secondary/80 text-on-surface">
           Year {y}
           <button type="button" onClick={() => removeFromList(list, setList, y)}
-            className="min-w-[24px] min-h-[24px] rounded hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+            className="min-w-[24px] min-h-[24px] rounded hover:bg-secondary/50 focus:outline-none focus-visible:ring-1 focus-visible:ring-focus cursor-pointer"
             aria-label={`${ariaRemovePrefix} ${y}`}>
             ×
           </button>
@@ -98,7 +98,7 @@ export default function SchoolDataForm({ initialData, onSave }: SchoolDataFormPr
   return (
     <form onSubmit={handleSubmit} className="flex flex-col justify-center items-center gap-4 sm:gap-6">
       <div className="w-11/12">
-        <label htmlFor="school-reference-year" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label htmlFor="school-reference-year" className="block text-sm font-medium text-on-surface mb-1">
           Start year (Year 1 begins)
         </label>
         <input id="school-reference-year" type="number" min={1990} max={currentYear + 20} value={referenceYear}
@@ -107,41 +107,41 @@ export default function SchoolDataForm({ initialData, onSave }: SchoolDataFormPr
       </div>
       <div className="w-11/12 flex flex-wrap gap-4">
         <div>
-          <label htmlFor="school-month" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start month</label>
+          <label htmlFor="school-month" className="block text-sm font-medium text-on-surface mb-1">Start month</label>
           <select id="school-month" value={month} onChange={(e) => setMonth(Number(e.target.value))}
             className={`pl-3 pr-7 py-2 ${INPUT_CLASS}`} aria-label="Month when school year starts">
             {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
           </select>
         </div>
         <div>
-          <label htmlFor="school-day" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start day</label>
+          <label htmlFor="school-day" className="block text-sm font-medium text-on-surface mb-1">Start day</label>
           <input id="school-day" type="number" min={1} max={31} value={day}
             onChange={(e) => setDay(Math.max(1, Math.min(31, Number(e.target.value) || 1)))}
             className={`w-20 px-3 py-2 ${INPUT_CLASS}`} aria-label="Day of month when school year starts" />
         </div>
       </div>
       <div className="w-11/12">
-        <label htmlFor="school-period-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Academic calendar</label>
+        <label htmlFor="school-period-type" className="block text-sm font-medium text-on-surface mb-1">Academic calendar</label>
         <select id="school-period-type" value={periodType} onChange={(e) => setPeriodType(e.target.value as SchoolPeriodType)}
           className={`pl-3 pr-7 py-2 ${INPUT_CLASS}`} aria-label="Academic calendar (quarter, trimester, semester)">
           {PERIOD_TYPES.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
       </div>
       <div className="w-11/12">
-        <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Repeated grades</span>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Use this data to align school years with calendar years.</p>
+        <span className="block text-sm font-medium text-on-surface mb-1">Repeated grades</span>
+        <p className="text-xs text-muted mb-2">Use this data to align school years with calendar years.</p>
         {gradeListSection('', addRepeated, setAddRepeated, repeatedGrades, setRepeatedGrades, 'Add repeated grade year number', 'Remove repeated year')}
       </div>
       <div className="w-11/12">
-        <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gap years</span>
+        <span className="block text-sm font-medium text-on-surface mb-1">Gap years</span>
         {gradeListSection('', addGap, setAddGap, gapYears, setGapYears, 'Add gap after year number', 'Remove gap after year')}
       </div>
       <div className="w-11/12">
-        <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Skipped grades</span>
+        <span className="block text-sm font-medium text-on-surface mb-1">Skipped grades</span>
         {gradeListSection('', addSkipped, setAddSkipped, skippedGrades, setSkippedGrades, 'Add skipped grade year number', 'Remove skipped year')}
       </div>
       <button type="submit"
-        className="w-full sm:w-auto sm:min-w-[140px] min-h-[44px] bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 text-white font-medium py-2 px-4 rounded-lg transition-colors touch-manipulation cursor-pointer">
+        className="w-full sm:w-auto sm:min-w-[140px] min-h-[44px] btn-primary focus:outline-none focus-visible:ring-1 focus-visible:ring-focus text-white font-medium py-2 px-4 rounded-lg transition-colors touch-manipulation cursor-pointer">
         {initialData ? "Update school data" : "Save school data"}
       </button>
     </form>

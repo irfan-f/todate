@@ -4,47 +4,89 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
-  Theme:
-  Design tokens live in @theme; light values here, .dark overrides below.
-  Component classes use var(--color-*) so one token change updates everywhere.
+  Design guidelines: Light = Night Owl Light, Dark = Night Owl Custom.
+  Color roles: --bg-primary (page), --depth (header), --surface-panel (cards/modals),
+  --surface-input (inputs), --primary (FAB, primary btn), --secondary (toggle/pills),
+  --text-primary, --text-muted, --border, --focus, --error.
+  Buttons: ghost for header icons, solid primary for FAB/CTAs, solid secondary for fab-sub/fab-settings.
 */
+:root {
+  --theme-transition: 0.2s ease;
+  --btn-nav-hover: rgba(0, 0, 0, 0.06);
+  --primary: #2AA298;
+  --secondary: #d3e8f8;
+  --tertiary: #e1c8a3;
+  --bonus: #bfd7ea;
+  --bg-primary: #FBFBFB;
+  --depth: #F0F0F0;
+  --surface-panel: #F0F0F0;
+  --surface-input: #F0F0F0;
+  --text-primary: #403f53;
+  --text-muted: #93A1A1;
+  --border: #d9d9d9;
+  --error: #E64D49;
+}
+
+.dark {
+  --btn-nav-hover: rgba(255, 255, 255, 0.08);
+  --primary: #7e57c2;
+  --secondary: #5f7e97;
+  --tertiary: #c9b896;
+  --bonus: #8fb4d4;
+  --bg-primary: #011627;
+  --depth: #011627;
+  --surface-panel: #0b253a;
+  --surface-input: #0b253a;
+  --text-primary: #d6deeb;
+  --text-muted: #5f7e97;
+  --border: #5f7e97;
+  --error: #EF5350;
+}
+
 @theme inline {
-  /* Secondary/neutral buttons (nav header, FAB sub-actions) */
-  --color-btn-surface: var(--color-gray-400);
-  --color-btn-surface-hover: var(--color-gray-300);
-  --color-btn-on: var(--color-gray-800);
-  --color-btn-ring: var(--color-gray-600);
-  /* Main FAB (primary action) */
-  --color-fab-main-surface: var(--color-gray-600);
-  --color-fab-main-surface-hover: var(--color-gray-500);
-  --color-fab-main-on: var(--color-gray-100);
-  --color-fab-main-ring: var(--color-gray-400);
-  /* Alt FAB (e.g. settings) */
-  --color-fab-alt-surface: var(--color-gray-500);
-  --color-fab-alt-surface-hover: var(--color-gray-400);
-  --color-fab-alt-on: var(--color-gray-100);
-  --color-fab-alt-ring: var(--color-gray-400);
-  /* Shadows that change in dark (optional override) */
+  /* Semantic palette → bg-*, text-*, border-*, ring-* utilities */
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-surface: var(--bg-primary);
+  --color-surface-panel: var(--surface-panel);
+  --color-surface-input: var(--surface-input);
+  --color-focus: var(--primary);
+  --color-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-on-surface: var(--text-primary);
+  --color-error: var(--error);
+  /* Component tokens */
+  --color-btn-surface: var(--secondary);
+  --color-btn-surface-hover: var(--primary);
+  --color-btn-on: var(--text-primary);
+  --color-btn-ring: var(--primary);
+  --color-fab-main-surface: var(--primary);
+  --color-fab-main-surface-hover: #1e8a82;
+  --color-fab-main-on: var(--color-white);
+  --color-fab-main-ring: var(--primary);
+  --color-fab-settings-surface: var(--surface-panel);
+  --color-fab-settings-surface-hover: #d4d4d4;
+  --color-fab-settings-on: var(--text-primary);
+  --color-fab-alt-surface: var(--depth);
+  --color-fab-alt-surface-hover: var(--secondary);
+  --color-fab-alt-on: var(--text-primary);
+  --color-fab-alt-ring: var(--secondary);
   --shadow-fab-sub: var(--shadow-lg);
   --shadow-fab-alt: var(--shadow-md);
 }
 
 /* Dark: override semantic tokens when .dark is on a parent (e.g. #root) */
 .dark {
-  --color-btn-surface: var(--color-gray-600);
-  --color-btn-surface-hover: var(--color-gray-500);
   --color-btn-on: var(--color-gray-200);
-  --color-btn-ring: var(--color-gray-400);
-  --color-fab-main-surface: var(--color-gray-700);
-  --color-fab-main-surface-hover: var(--color-gray-600);
-  --color-fab-main-on: var(--color-gray-200);
-  --color-fab-main-ring: var(--color-gray-300);
-  --color-fab-alt-surface: var(--color-gray-600);
-  --color-fab-alt-surface-hover: var(--color-gray-500);
+  --color-fab-main-surface: #9575cd;
+  --color-fab-main-surface-hover: #7e57c2;
+  --color-fab-main-on: var(--color-white);
+  --color-fab-settings-surface: var(--secondary);
+  --color-fab-settings-surface-hover: #4a6478;
+  --color-fab-settings-on: var(--color-white);
   --color-fab-alt-on: var(--color-gray-200);
-  --color-fab-alt-ring: var(--color-gray-300);
   /* Icon fill when parent doesn’t set color; light uses currentColor via fallback */
-  --color-icon-fill: var(--color-gray-200);
+  --color-icon-fill: var(--secondary);
   --shadow-fab-sub: var(--shadow-xl);
   --shadow-fab-alt: var(--shadow-lg);
 }
@@ -57,13 +99,15 @@
     height: 100%;
     margin: 0;
     overscroll-behavior: none;
+    transition: background-color var(--theme-transition), color var(--theme-transition);
   }
 
   @media (max-width: 768px) {
     input,
     select,
     textarea {
-      font-size: 16px;
+      font-size: 16px !important;
+      touch-action: manipulation;
     }
   }
 
@@ -75,6 +119,7 @@
     min-height: 0;
     user-select: none;
     cursor: default;
+    transition: background-color var(--theme-transition), color var(--theme-transition), border-color var(--theme-transition);
   }
 
   input,
@@ -92,13 +137,13 @@
     line-height: inherit;
     padding-inline-start: 0.5rem;
     padding-inline-end: 1.75rem;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-image: url('../assets/chevron-down-light.svg');
     background-repeat: no-repeat;
     background-position: right 0.375rem center;
     background-size: 1rem;
   }
   .dark select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+    background-image: url('../assets/chevron-down-dark.svg');
   }
   input[type="number"],
   input[type="checkbox"],
@@ -116,37 +161,47 @@
 
 /* Component classes: theme vars (var(--color-*)); dark via .dark token overrides */
 @layer components {
+  .bg-header {
+    background-color: var(--depth);
+    transition: background-color var(--theme-transition);
+  }
+  .bg-surface {
+    background-color: var(--bg-primary);
+    transition: background-color var(--theme-transition);
+  }
   .icon-svg {
     width: 100%;
     height: 100%;
     fill: var(--color-icon-fill, currentColor);
+    transition: fill var(--theme-transition), color var(--theme-transition);
     flex-shrink: 0;
     vertical-align: middle;
   }
 
   .btn-nav-header {
-    min-height: 44px;
-    min-width: 44px;
+    min-height: 48px;
+    min-width: 48px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-md, 0.375rem);
-    background-color: var(--color-btn-surface);
-    color: var(--color-btn-on);
-    transition: background-color, color;
+    background-color: transparent;
+    color: var(--text-primary);
+    transition: background-color var(--theme-transition), color var(--theme-transition);
     touch-action: manipulation;
     cursor: pointer;
     outline: none;
   }
   .btn-nav-header:hover {
-    background-color: var(--color-btn-surface-hover);
+    background-color: var(--btn-nav-hover);
   }
   .btn-nav-header:focus-visible {
-    box-shadow: 0 0 0 1px var(--color-btn-ring);
+    box-shadow: 0 0 0 1px var(--color-focus);
   }
 
   .fab-sub {
-    min-height: 48px;
+    --color-icon-fill: var(--color-btn-on);
+    min-height: 56px;
     padding-left: 1rem;
     padding-right: 1rem;
     border-radius: 9999px;
@@ -157,26 +212,28 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    transition: background-color, color, box-shadow;
+    transition: background-color var(--theme-transition), color var(--theme-transition), box-shadow var(--theme-transition);
     touch-action: manipulation;
     cursor: pointer;
     outline: none;
   }
   @media (width >= 40rem) {
     .fab-sub {
-      min-height: 44px;
+      min-height: 56px;
       padding-left: 1.25rem;
       padding-right: 1.25rem;
     }
   }
   .fab-sub:hover {
     background-color: var(--color-btn-surface-hover);
+    box-shadow: var(--shadow-xl);
   }
   .fab-sub:focus-visible {
     box-shadow: 0 0 0 1px var(--color-btn-ring), var(--shadow-fab-sub);
   }
 
   .fab-main {
+    --color-icon-fill: var(--color-fab-main-on);
     min-height: 56px;
     min-width: 56px;
     border-radius: 9999px;
@@ -186,35 +243,31 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: background-color, color, transform 0.2s;
+    transition: background-color var(--theme-transition), color var(--theme-transition), transform var(--theme-transition), box-shadow var(--theme-transition);
     touch-action: manipulation;
     cursor: pointer;
     outline: none;
   }
-  @media (width >= 40rem) {
-    .fab-main {
-      min-height: 60px;
-      min-width: 60px;
-    }
-  }
   .fab-main:hover {
     background-color: var(--color-fab-main-surface-hover);
+    box-shadow: var(--shadow-2xl);
   }
   .fab-main:focus-visible {
     box-shadow: 0 0 0 1px var(--color-fab-main-ring), var(--shadow-xl);
   }
 
   .fab-settings {
-    min-height: 44px;
-    min-width: 44px;
+    --color-icon-fill: var(--color-fab-settings-on);
+    min-height: 48px;
+    min-width: 48px;
     border-radius: 9999px;
-    background-color: var(--color-fab-alt-surface);
-    color: var(--color-fab-alt-on);
-    box-shadow: var(--shadow-fab-alt);
+    background-color: var(--color-fab-settings-surface);
+    color: var(--color-fab-settings-on);
+    box-shadow: var(--shadow-fab-sub);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: background-color, color, box-shadow;
+    transition: background-color var(--theme-transition), color var(--theme-transition), box-shadow var(--theme-transition);
     touch-action: manipulation;
     cursor: pointer;
     outline: none;
@@ -226,9 +279,67 @@
     }
   }
   .fab-settings:hover {
-    background-color: var(--color-fab-alt-surface-hover);
+    background-color: var(--color-fab-settings-surface-hover);
+    box-shadow: var(--shadow-xl);
   }
   .fab-settings:focus-visible {
-    box-shadow: 0 0 0 1px var(--color-fab-alt-ring), var(--shadow-fab-alt);
+    box-shadow: 0 0 0 1px var(--color-btn-ring), var(--shadow-fab-sub);
+  }
+
+  /* Reusable components to reduce classname clutter */
+  .btn-icon {
+    @apply inline-flex items-center justify-center p-1 rounded;
+    @apply text-muted hover:text-on-surface;
+    @apply hover:bg-secondary/50;
+    @apply focus:outline-none focus-visible:ring-1 focus-visible:ring-focus cursor-pointer;
+  }
+
+  .btn-icon-panel {
+    @apply p-1 rounded text-muted hover:text-on-surface;
+    @apply hover:bg-secondary/50;
+    @apply focus:outline-none focus-visible:ring-1 focus-visible:ring-focus cursor-pointer;
+  }
+
+  .btn-primary {
+    @apply min-h-[48px] px-4 py-2 rounded-lg font-medium;
+    @apply bg-primary text-white hover:opacity-90;
+    @apply focus:outline-none focus-visible:ring-1 focus-visible:ring-focus;
+    transition: background-color var(--theme-transition), color var(--theme-transition), opacity var(--theme-transition);
+    @apply touch-manipulation cursor-pointer;
+  }
+
+  .input-base {
+    @apply w-full rounded-lg text-sm;
+    @apply border border-border bg-surface-input text-on-surface;
+    transition: background-color var(--theme-transition), border-color var(--theme-transition), color var(--theme-transition);
+    @apply placeholder:text-muted;
+    @apply focus:border-focus focus:ring-2 focus:ring-focus/20 focus:outline-none;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .panel {
+    @apply rounded-lg border border-border bg-surface-panel;
+    transition: background-color var(--theme-transition), border-color var(--theme-transition);
+  }
+
+  .panel-muted {
+    @apply rounded-lg border border-border;
+    @apply bg-surface dark:bg-surface-panel/50;
+    transition: background-color var(--theme-transition), border-color var(--theme-transition);
+  }
+
+  .menu-item {
+    @apply w-full flex items-center gap-2 px-3 py-2 text-sm text-left cursor-pointer;
+    @apply text-on-surface;
+    transition: background-color var(--theme-transition), color var(--theme-transition);
+    @apply hover:bg-secondary/50;
+    @apply focus:outline-none focus-visible:ring-1 focus-visible:ring-focus focus-visible:ring-inset;
+  }
+
+  .option-btn {
+    @apply w-full min-h-[48px] rounded-lg px-3 text-left;
+    @apply border border-border bg-surface-input text-on-surface;
+    transition: background-color var(--theme-transition), border-color var(--theme-transition), color var(--theme-transition);
+    @apply hover:bg-secondary/30;
   }
 }

@@ -9,16 +9,12 @@ import DatasetsPanel from './components/DatasetsPanel';
 import Modal from './components/Modal';
 import Icon from './components/Icon';
 import TimelineFilters from './components/TimelineFilters';
-
-import filterListIcon from './assets/filter_list.svg?raw';
-import filterListOffIcon from './assets/filter_list_off.svg?raw';
-import starIcon from './assets/star.svg?raw';
-import tagIcon from './assets/tag.svg?raw';
-import schoolIcon from './assets/school.svg?raw';
+import { icons } from './icons';
 import { useTheme } from './hooks/useTheme';
 import { useClickOutside } from './hooks/useClickOutside';
 import ThemeToggle from './components/ThemeToggle';
 import { loadStore, saveStore } from './storage/local';
+import { randomUUID } from './utils/id';
 import * as exportImport from './storage/exportImport';
 import type { NormalizedImport } from './storage/exportImport';
 import { saveToDrive, loadFromDrive, isDriveSyncAvailable } from './storage/drive';
@@ -36,8 +32,8 @@ function App() {
   }, [store]);
 
   const activeDataset = store.datasets[store.activeId];
-  const todates = activeDataset?.todates ?? {};
-  const tags = activeDataset?.tags ?? {};
+  const todates = useMemo(() => activeDataset?.todates ?? {}, [activeDataset?.todates]);
+  const tags = useMemo(() => activeDataset?.tags ?? {}, [activeDataset?.tags]);
   const schoolStartDate = activeDataset?.schoolStartDate ?? null;
 
   const [sampleLoaded, setSampleLoaded] = useState(false);
@@ -45,16 +41,21 @@ function App() {
     if (sampleLoaded || !activeDataset) return;
     if (import.meta.env.DEV && import.meta.env.VITE_SAMPLE_DATA === 'true') {
       const sampleDataPath = '../sampleData';
+      interface SampleModule {
+        sampleTodates: TodatesType;
+        sampleTags: TagsType;
+        sampleSchoolStartDate: SchoolStartDate;
+      }
       import(/* @vite-ignore */ sampleDataPath)
-        .then((mod) => {
+        .then((mod: SampleModule) => {
           setStore((prev) => {
-            const id = crypto.randomUUID();
+            const id = randomUUID();
             const newDs: Dataset = {
               id,
               name: 'Test Data',
-              todates: mod.sampleTodates as TodatesType,
-              tags: mod.sampleTags as TagsType,
-              schoolStartDate: mod.sampleSchoolStartDate as SchoolStartDate,
+              todates: mod.sampleTodates,
+              tags: mod.sampleTags,
+              schoolStartDate: mod.sampleSchoolStartDate,
             };
             return {
               ...prev,
@@ -68,7 +69,7 @@ function App() {
           console.warn('sampleData.ts not found at project root — starting with empty state');
         });
     }
-  }, [sampleLoaded, activeDataset?.id]);
+  }, [sampleLoaded, activeDataset]);
 
   const [isTodateFormModalOpen, setIsTodateFormModalOpen] = useState(false);
   const [isTagFormModalOpen, setIsTagFormModalOpen] = useState(false);
@@ -111,7 +112,10 @@ function App() {
   const [formResetKey, setFormResetKey] = useState(0);
   const [hasActiveTodate, setHasActiveTodate] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
-  const [datasetsPanelCollapsed, setDatasetsPanelCollapsed] = useState(false);
+  const [datasetsPanelCollapsed, setDatasetsPanelCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 767px)').matches;
+  });
   const filtersRef = useRef<HTMLDivElement>(null);
   const fabAreaRef = useRef<HTMLDivElement>(null);
 
@@ -270,7 +274,7 @@ function App() {
   }, []);
 
   const handleAddDataset = useCallback(() => {
-    const id = crypto.randomUUID();
+    const id = randomUUID();
     const newDs: Dataset = {
       id,
       name: 'New dataset',
@@ -287,6 +291,9 @@ function App() {
 
   const handleOpenDataset = useCallback((datasetId: string) => {
     setStore((prev) => (prev.activeId === datasetId ? prev : { ...prev, activeId: datasetId }));
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+      setDatasetsPanelCollapsed(true);
+    }
   }, []);
 
   const handleRenameDataset = useCallback((datasetId: string, newName: string) => {
@@ -304,7 +311,7 @@ function App() {
     setStore((prev) => {
       const ids = Object.keys(prev.datasets).filter((id) => id !== datasetId);
       if (ids.length === 0) return prev;
-      const nextActive = prev.activeId === datasetId ? ids[0]! : prev.activeId;
+      const nextActive = prev.activeId === datasetId ? (ids[0] ?? prev.activeId) : prev.activeId;
       const nextDatasets = { ...prev.datasets };
       delete nextDatasets[datasetId];
       return { activeId: nextActive, datasets: nextDatasets };
@@ -383,8 +390,8 @@ function App() {
 
   const inlineCreateForm = (
     <div className="h-full flex flex-col gap-3 p-3">
-      <div className="flex-1 min-h-0 flex flex-col rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 @container min-w-0 overflow-x-hidden">
-        <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2 shrink-0">Create Todate</h2>
+      <div className="flex-1 min-h-0 flex flex-col rounded-lg border border-border bg-surface-panel p-3 @container min-w-0 overflow-x-hidden">
+        <h2 className="text-sm font-semibold text-on-surface mb-2 shrink-0">Create Todate</h2>
         <TodateForm
           key={`todate-inline-${formResetKey}`}
           tags={tags}
@@ -403,12 +410,23 @@ function App() {
   return (
     <>
       <header
-        className="w-full shrink-0 p-3 sm:p-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3 bg-gray-500 dark:bg-gray-700"
+        className="w-full shrink-0 p-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3 bg-header text-on-surface"
         role="banner"
       >
-        <h1 className="font-bold text-2xl sm:text-3xl md:text-4xl text-gray-100 dark:text-gray-200 justify-self-start">
-          Todate
-        </h1>
+        <div className="flex items-center gap-2 justify-self-start min-w-0">
+          <button
+            type="button"
+            onClick={() => setDatasetsPanelCollapsed((c) => !c)}
+            aria-label={datasetsPanelCollapsed ? 'Open datasets panel' : 'Close datasets panel'}
+            aria-expanded={!datasetsPanelCollapsed}
+            className="md:hidden btn-nav-header shrink-0"
+          >
+            <Icon src={icons.menu} className="w-6 h-6" />
+          </button>
+          <h1 className="font-bold text-2xl sm:text-3xl md:text-4xl text-on-surface truncate">
+            Todate
+          </h1>
+        </div>
 
         <div className="justify-self-center">
           <ThemeToggle theme={theme} setTheme={setTheme} />
@@ -439,8 +457,8 @@ function App() {
               className="btn-nav-header"
             >
               <Icon
-                src={hasFilters ? filterListIcon : filterListOffIcon}
-                className="w-6 h-6 sm:w-5 sm:h-5 text-gray-800 dark:text-gray-200"
+                src={hasFilters ? icons.filterList : icons.filterListOff}
+                className="w-6 h-6 sm:w-5 sm:h-5 text-on-surface"
               />
             </button>
           </TimelineFilters>
@@ -449,7 +467,7 @@ function App() {
 
       <div
         ref={fabAreaRef}
-        className={`${hasActiveTodate || rightPanelCollapsed ? '' : 'md:hidden'} fixed bottom-6 right-20 sm:bottom-8 sm:right-24 z-30 flex flex-row items-end gap-2 sm:gap-3`}
+        className={`${hasActiveTodate || rightPanelCollapsed ? '' : 'md:hidden'} fixed bottom-6 right-6 sm:bottom-8 z-30 flex flex-row items-end gap-2 sm:gap-3`}
       >
         <div className="flex flex-col items-end gap-2 sm:gap-3">
           {fabOpen && (
@@ -463,7 +481,7 @@ function App() {
                 aria-label="Create new todate"
                 className="fab-sub"
               >
-                <Icon src={starIcon} className="w-5 h-5 text-gray-800 dark:text-gray-200" />
+                <Icon src={icons.star} className="w-5 h-5 text-on-surface" />
                 <span className="text-sm font-medium">Todate</span>
               </button>
               <button
@@ -475,7 +493,7 @@ function App() {
                 aria-label="Create new tag"
                 className="fab-sub"
               >
-                <Icon src={tagIcon} className="w-5 h-5 text-gray-800 dark:text-gray-200" />
+                <Icon src={icons.tag} className="w-5 h-5 text-on-surface" />
                 <span className="text-sm font-medium">Tag</span>
               </button>
             </div>
@@ -488,9 +506,7 @@ function App() {
             className="fab-main"
             style={{ transform: fabOpen ? 'rotate(45deg)' : undefined }}
           >
-            <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="currentColor" viewBox="0 -960 960 960" aria-hidden>
-              <path d="M440-280h80v-160h160v-80H520v-160h-80v160H280v80h160v160Z" />
-            </svg>
+            <Icon src={icons.add} className="w-7 h-7 sm:w-8 sm:h-8" />
           </button>
         </div>
         <button
@@ -499,11 +515,11 @@ function App() {
           aria-label="Edit school data"
           className="fab-settings"
         >
-          <Icon src={schoolIcon} className="w-5 h-5 sm:w-6 sm:h-6" />
+          <Icon src={icons.school} className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       </div>
 
-      <main id="main-content" className="flex-1 min-h-0 flex flex-row min-w-0 bg-stone-100 dark:bg-gray-800" role="main">
+      <main id="main-content" className="flex-1 min-h-0 flex flex-row min-w-0 bg-surface" role="main">
         <DatasetsPanel
           store={store}
           isCollapsed={datasetsPanelCollapsed}
@@ -520,8 +536,8 @@ function App() {
           onImportStrategy={handleImportStrategy}
           onCloseImport={handleCloseImport}
           driveSyncAvailable={driveSyncAvailable}
-          onSaveToDrive={handleSaveToDrive}
-          onLoadFromDrive={handleLoadFromDrive}
+          onSaveToDrive={() => { void handleSaveToDrive(); }}
+          onLoadFromDrive={() => { void handleLoadFromDrive(); }}
           driveMessage={driveMessage}
         />
         <div className="flex-1 min-h-0 flex flex-col min-w-0">
@@ -586,7 +602,7 @@ function App() {
         createPortal(
           <Modal title="Import failed" closeFn={handleCloseImport}>
             <div className="flex flex-col gap-3">
-              <p className="text-gray-700 dark:text-gray-300">{importError}</p>
+              <p className="text-on-surface">{importError}</p>
               <div className="flex justify-end">
                 <button type="button" onClick={handleCloseImport} className="btn-nav-header px-3">
                   Close
@@ -600,7 +616,7 @@ function App() {
         createPortal(
           <Modal title="Import" closeFn={handleCloseImport}>
             <div className="flex flex-col gap-3">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted">
                 Import &quot;{pendingImport.name}&quot; ({Object.keys(pendingImport.todates).length} todates,{' '}
                 {Object.keys(pendingImport.tags).length} tags):
               </p>
@@ -608,21 +624,21 @@ function App() {
                 <button
                   type="button"
                   onClick={() => handleImportStrategy('replace')}
-                  className="w-full min-h-[44px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 text-left px-3"
+                  className="option-btn"
                 >
                   Replace current dataset
                 </button>
                 <button
                   type="button"
                   onClick={() => handleImportStrategy('merge')}
-                  className="w-full min-h-[44px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 text-left px-3"
+                  className="option-btn"
                 >
                   Merge into current dataset
                 </button>
                 <button
                   type="button"
                   onClick={() => handleImportStrategy('add')}
-                  className="w-full min-h-[44px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 text-left px-3"
+                  className="option-btn"
                 >
                   Add as new dataset
                 </button>

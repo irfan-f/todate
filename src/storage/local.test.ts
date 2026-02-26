@@ -7,6 +7,12 @@ import type { Store } from '../types'
 
 const STORAGE_KEY = 'todate-store'
 
+/** Shape of JSON stored in localStorage (subset used by tests). */
+interface StoredStore {
+  activeId: string;
+  datasets: Record<string, { id: string; name: string }>;
+}
+
 let loadStore: () => Store
 let saveStore: (store: Store) => void
 
@@ -124,7 +130,7 @@ describe('saveStore', () => {
     vi.advanceTimersByTime(400)
     const raw = localStorage.getItem(STORAGE_KEY)
     expect(raw).not.toBeNull()
-    const parsed = JSON.parse(raw!)
+    const parsed = JSON.parse(raw!) as StoredStore
     expect(parsed.activeId).toBe('a')
     expect(parsed.datasets.a.name).toBe('Default')
   })
@@ -144,7 +150,7 @@ describe('saveStore', () => {
     })
     vi.advanceTimersByTime(400)
     const raw = localStorage.getItem(STORAGE_KEY)
-    const parsed = JSON.parse(raw!)
+    const parsed = JSON.parse(raw!) as StoredStore
     expect(parsed.activeId).toBe('second')
     expect(parsed.datasets.second.name).toBe('Second')
   })
@@ -185,7 +191,7 @@ describe('saveStore debounce', () => {
     vi.advanceTimersByTime(400)
     const raw = localStorage.getItem(STORAGE_KEY)
     expect(raw).not.toBeNull()
-    const parsed = JSON.parse(raw!)
+    const parsed = JSON.parse(raw!) as StoredStore
     expect(parsed.activeId).toBe('c')
     expect(parsed.datasets.c.name).toBe('Three')
   })
@@ -197,14 +203,14 @@ describe('saveStore debounce', () => {
     }
     saveStore(store1)
     vi.advanceTimersByTime(400)
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).activeId).toBe('a')
+    expect((JSON.parse(localStorage.getItem(STORAGE_KEY)!) as StoredStore).activeId).toBe('a')
     const store2: Store = {
       activeId: 'b',
       datasets: { b: { id: 'b', name: 'Two', todates: {}, tags: {} } },
     }
     saveStore(store2)
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).activeId).toBe('a')
+    expect((JSON.parse(localStorage.getItem(STORAGE_KEY)!) as StoredStore).activeId).toBe('a')
     vi.advanceTimersByTime(400)
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).activeId).toBe('b')
+    expect((JSON.parse(localStorage.getItem(STORAGE_KEY)!) as StoredStore).activeId).toBe('b')
   })
 })

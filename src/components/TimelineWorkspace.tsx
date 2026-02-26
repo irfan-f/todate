@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useHoverDelay } from '../hooks/useHoverDelay';
 import type { TodateType, SchoolStartDate } from '../types';
 import { todateToBarItem } from '../utils/timelineBar';
 import TimelineBar, { type TimelineBarItem } from './TimelineBar';
 import Todate from './Todate';
 import Icon from './Icon';
-import panelCollapseIcon from '../assets/panel-collapse.svg?raw';
-import panelExpandIcon from '../assets/panel-expand.svg?raw';
+import { icons } from '../icons';
 
 const TIMELINE_WIDTH_STORAGE_KEY = 'todate-timeline-width-pct';
 const MIN_TIMELINE_PCT = 15;
@@ -57,6 +57,7 @@ const TimelineWorkspace = ({
   const timelineBarWidthPct = isRightPanelCollapsed ? 100 : timelineWidthPct;
   const timelineBarWidthStyle = { ['--timeline-width' as string]: `${timelineBarWidthPct}%` };
   const [isDragging, setIsDragging] = useState(false);
+  const [resizeHoverActive, resizeHoverHandlers] = useHoverDelay(200);
   const dragStartRef = useRef({ x: 0, widthPct: 0 });
   const lastSavedWidthPctRef = useRef(timelineWidthPct);
 
@@ -69,7 +70,7 @@ const TimelineWorkspace = ({
     lastSavedWidthPctRef.current = widthToUse;
     if (isRightPanelCollapsed) onRightPanelCollapsedChange?.(false);
     setIsDragging(true);
-  }, [timelineWidthPct, isRightPanelCollapsed]);
+  }, [timelineWidthPct, isRightPanelCollapsed, onRightPanelCollapsedChange]);
 
   const toggleRightPanel = useCallback(() => {
     onRightPanelCollapsedChange?.(!isRightPanelCollapsed);
@@ -157,7 +158,7 @@ const TimelineWorkspace = ({
   ) : (
     <>
       <div className="md:hidden h-full flex items-center justify-center p-4">
-        <p className="text-gray-400 dark:text-gray-500 text-sm">
+        <p className="text-muted text-sm">
           {isEmpty ? emptyMessage : 'Hover or tap an item on the timeline to view details.'}
         </p>
       </div>
@@ -177,18 +178,18 @@ const TimelineWorkspace = ({
       aria-label="Timeline workspace"
     >
       <div
-        className="relative flex flex-col min-h-0 shrink-0 w-1/4 md:w-(--timeline-width) transition-[width] duration-200 ease-out bg-stone-50 dark:bg-gray-900/50"
+        className="relative flex flex-col min-h-0 shrink-0 w-1/4 md:w-(--timeline-width) transition-[width] duration-200 ease-out bg-surface-panel/50"
       >
-        <div className="hidden md:flex shrink-0 justify-between items-center min-h-[28px] py-0.5 px-1 border-b border-gray-200 dark:border-gray-700">
+        <div className="hidden md:flex shrink-0 justify-between items-center min-h-[28px] py-0.5 px-1 border-b border-border">
           <button
             type="button"
             onClick={() => onDatasetsPanelCollapsedChange?.(!datasetsPanelCollapsed)}
             aria-label={datasetsPanelCollapsed ? 'Expand datasets panel' : 'Close datasets panel'}
             data-testid="datasets-panel-toggle"
-            className="p-1 rounded text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+            className="btn-icon-panel"
           >
             <Icon
-              src={datasetsPanelCollapsed ? panelCollapseIcon : panelExpandIcon}
+              src={datasetsPanelCollapsed ? icons.panelCollapse : icons.panelExpand}
               className="w-4 h-4"
             />
           </button>
@@ -196,10 +197,10 @@ const TimelineWorkspace = ({
             type="button"
             onClick={toggleRightPanel}
             aria-label={isRightPanelCollapsed ? 'Open right panel' : 'Close right panel'}
-            className="p-1 rounded text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+            className="btn-icon-panel"
           >
             <Icon
-              src={isRightPanelCollapsed ? panelExpandIcon : panelCollapseIcon}
+              src={isRightPanelCollapsed ? icons.panelExpand : icons.panelCollapse}
               className="w-4 h-4"
             />
           </button>
@@ -221,7 +222,10 @@ const TimelineWorkspace = ({
           aria-label="Resize timeline"
           tabIndex={0}
           onMouseDown={handleResizeStart}
-          className="hidden md:flex shrink-0 w-1.5 flex-col items-stretch bg-gray-300 dark:bg-gray-600 border-l border-r border-gray-400 dark:border-gray-500 cursor-col-resize hover:bg-gray-400 dark:hover:bg-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
+          {...resizeHoverHandlers}
+          className={`hidden md:flex shrink-0 w-1.5 flex-col items-stretch bg-border border-l border-r border-border cursor-col-resize transition-opacity duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-inset ${
+            resizeHoverActive || isDragging ? 'opacity-80' : 'opacity-25'
+          }`}
         />
       )}
 

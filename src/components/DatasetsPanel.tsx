@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import DatasetsView from './DatasetsView';
+import { useHoverDelay } from '../hooks/useHoverDelay';
 import type { Store } from '../types';
 import type { NormalizedImport } from '../storage/exportImport';
 
@@ -10,7 +11,7 @@ const DEFAULT_PCT = 20;
 
 type ImportStrategy = 'replace' | 'merge' | 'add';
 
-export type DatasetsPanelProps = {
+export interface DatasetsPanelProps {
   store: Store;
   isCollapsed: boolean;
   onPanelCollapsedChange?: (collapsed: boolean) => void;
@@ -60,6 +61,7 @@ export default function DatasetsPanel({
     return Number.isFinite(n) && n >= MIN_PCT && n <= MAX_PCT ? n : DEFAULT_PCT;
   });
   const [isDragging, setIsDragging] = useState(false);
+  const [resizeHoverActive, resizeHoverHandlers] = useHoverDelay(200);
   const dragStartRef = useRef({ x: 0, widthPct: 0 });
   const lastSavedWidthPctRef = useRef(widthPct);
 
@@ -126,6 +128,47 @@ export default function DatasetsPanel({
   return (
     <>
       <div
+        className="md:hidden fixed inset-0 z-40 pointer-events-none"
+        aria-hidden
+      >
+        <button
+          type="button"
+          onClick={() => onPanelCollapsedChange?.(true)}
+          className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${
+            isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+          }`}
+          aria-label="Close datasets panel"
+        />
+        <div
+          className={`pointer-events-auto absolute left-0 top-0 bottom-0 w-[min(85vw,320px)] flex flex-col bg-surface-panel shadow-xl transition-transform duration-200 ease-out ${
+            isCollapsed ? '-translate-x-full' : 'translate-x-0'
+          }`}
+          aria-label="Datasets panel"
+          style={{ visibility: isCollapsed ? 'hidden' : 'visible' }}
+        >
+          <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
+            <DatasetsView
+              store={store}
+              onAddDataset={onAddDataset}
+              onOpenDataset={onOpenDataset}
+              onRenameDataset={onRenameDataset}
+              onDeleteDataset={onDeleteDataset}
+              onExportAll={onExportAll}
+              onExportDataset={onExportDataset}
+              onImport={onImport}
+              pendingImport={pendingImport}
+              importError={importError}
+              onImportStrategy={onImportStrategy}
+              onCloseImport={onCloseImport}
+              driveSyncAvailable={driveSyncAvailable}
+              onSaveToDrive={onSaveToDrive}
+              onLoadFromDrive={onLoadFromDrive}
+              driveMessage={driveMessage}
+            />
+          </div>
+        </div>
+      </div>
+      <div
         ref={containerRef}
         className={`flex flex-col min-h-0 shrink-0 transition-[width] duration-200 ease-out hidden md:flex ${
           isDragging ? 'select-none' : ''
@@ -134,7 +177,7 @@ export default function DatasetsPanel({
         aria-label="Datasets panel"
       >
         {isCollapsed ? (
-          <div className="flex-1 min-h-0 bg-stone-50 dark:bg-gray-900/50" aria-hidden />
+          <div className="flex-1 min-h-0 bg-surface-panel/50" aria-hidden />
         ) : (
           <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
             <DatasetsView
@@ -165,7 +208,10 @@ export default function DatasetsPanel({
           data-testid="datasets-panel-resize"
           tabIndex={0}
           onMouseDown={handleResizeStart}
-          className="hidden md:flex shrink-0 w-1.5 flex-col items-stretch bg-gray-300 dark:bg-gray-600 border-l border-r border-gray-400 dark:border-gray-500 cursor-col-resize hover:bg-gray-400 dark:hover:bg-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
+          {...resizeHoverHandlers}
+          className={`hidden md:flex shrink-0 w-1.5 flex-col items-stretch bg-border border-l border-r border-border cursor-col-resize transition-opacity duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-inset ${
+            resizeHoverActive || isDragging ? 'opacity-80' : 'opacity-25'
+          }`}
         />
       )}
     </>

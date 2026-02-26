@@ -56,7 +56,7 @@ export default function CalendarDatePanel({
   };
 
   const rowClass = compact ? 'flex items-center justify-between gap-2 min-w-0' : '';
-  const labelClass = compact ? 'text-xs font-medium text-gray-600 dark:text-gray-400 shrink-0 w-10' : 'text-sm text-gray-700 dark:text-gray-300 shrink-0';
+  const labelClass = compact ? 'text-xs font-medium text-muted shrink-0 w-10' : 'text-sm text-on-surface shrink-0';
   const inputClass = compact
     ? `flex-1 min-w-0 px-2 py-1.5 ${INPUT_CLASS}`
     : `min-w-20 w-20 px-2 py-2 ${INPUT_CLASS}`;

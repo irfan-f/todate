@@ -7,8 +7,7 @@ export const MONTHS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-export const INPUT_CLASS =
-  "border border-gray-300 dark:border-gray-500 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
+export const INPUT_CLASS = "input-base";
 
 /** Fallback color for tags (e.g. tag pills, todate detail) when no tag color is set. */
 export const DEFAULT_TAG_COLOR = '#9ca3af'; // gray-400

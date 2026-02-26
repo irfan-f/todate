@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import type { TodateType, TagType, TagsType, DateValue, SchoolStartDate } from "../types";
 import { INPUT_CLASS } from "../constants";
+import { randomUUID } from "../utils/id";
 import { dateValueToIso, isoToDatetimeLocal } from "../utils/date";
 import { periodCount } from "../utils/schoolPeriod";
 import SchoolYearDatePanel from "./SchoolYearDatePanel";
 import CalendarDatePanel from "./CalendarDatePanel";
 import NewButton from "./NewButton";
 import Icon from "./Icon";
-import editIcon from "../assets/edit.svg?raw";
-import tagIcon from "../assets/tag.svg?raw";
+import { icons } from "../icons";
 
 type DateTab = 'school' | 'calendar';
 
@@ -288,7 +288,7 @@ const TodateForm = ({
       dateTab === "school" ? schoolStartDate ?? { referenceYear: currentYear, month: 9, day: 1, periodType: "quarter" } : undefined
     );
     const endDateValue = buildEndDateValue();
-    const id = initialData?._id ?? crypto.randomUUID();
+    const id = initialData?._id ?? randomUUID();
     const data: TodateType = {
       title,
       date: iso,
@@ -309,7 +309,7 @@ const TodateForm = ({
 
   const renderDateFormatTabs = (fieldPrefix: string, tab: DateTab, setTab: (t: DateTab) => void) => (
     <div role="tablist" aria-label={`${fieldPrefix ? 'End d' : 'D'}ate format`}
-      className="flex border border-b-0 rounded-t-lg border-gray-300 dark:border-gray-500">
+      className="flex border border-b-0 rounded-t-lg border-border">
       {DATE_TABS.map((opt) => {
         const sel = tab === opt.value;
         return (
@@ -317,8 +317,8 @@ const TodateForm = ({
             aria-controls={`panel-${fieldPrefix}${opt.value}`} id={`tab-${fieldPrefix}${opt.value}`}
             tabIndex={sel ? 0 : -1} onClick={() => setTab(opt.value)}
             className={`flex-1 min-w-0 px-2 ${compact ? 'py-1 text-xs' : 'py-2 text-sm'} font-medium border-b-2 -mb-px transition-colors cursor-pointer ${
-              sel ? "border-blue-600 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+              sel ? "border-primary text-primary"
+                : "border-transparent text-muted hover:text-on-surface"
             }`}>
             {opt.label}
           </button>
@@ -338,7 +338,7 @@ const TodateForm = ({
     const endDateBlock = (
       <div className="flex flex-col min-w-0 overflow-hidden">
         {renderDateFormatTabs('end-', endDateTab, setEndDateTab)}
-        <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg px-2 pt-1.5 pb-3 ${datePanelH} min-w-0 overflow-hidden`}>
+        <div className={`border border-t-0 border-border rounded-b-lg px-2 pt-1.5 pb-3 ${datePanelH} min-w-0 overflow-hidden`}>
           {endDateTab === "school" && (
             <SchoolYearDatePanel
               fieldPrefix="end-"
@@ -374,7 +374,7 @@ const TodateForm = ({
     const startDateBlock = (
       <div className="flex flex-col min-w-0 overflow-hidden">
         {renderDateFormatTabs('', dateTab, setDateTab)}
-        <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg px-2 pt-1.5 pb-3 ${datePanelH} min-w-0 overflow-hidden`}>
+        <div className={`border border-t-0 border-border rounded-b-lg px-2 pt-1.5 pb-3 ${datePanelH} min-w-0 overflow-hidden`}>
           {dateTab === "school" && (
             <SchoolYearDatePanel
               fieldPrefix=""
@@ -414,28 +414,28 @@ const TodateForm = ({
           <div className="flex-1 min-w-0 flex flex-col gap-2 overflow-x-hidden overflow-y-auto overscroll-contain">
             {/* Title */}
             <div>
-              <label htmlFor="todate-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">Title</label>
+              <label htmlFor="todate-title" className="block text-sm font-medium text-on-surface mb-0.5">Title</label>
               <input id="todate-title" type="text" value={title} onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                className="input-base px-2 py-1.5"
                 placeholder="Enter title" required autoComplete="off" />
             </div>
 
             {/* Dates: stacked when container narrow, side-by-side when wide (@md+ = 448px) */}
             <div className="flex flex-col gap-2 @md:flex-row">
               <div className="flex-1 min-w-0" role="group" aria-labelledby="date-format-label">
-                <p id="date-format-label" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">Start</p>
+                <p id="date-format-label" className="text-sm font-medium text-on-surface mb-0.5">Start</p>
                 {startDateBlock}
               </div>
               <div className="flex-1 min-w-0" role="group" aria-labelledby="end-date-label">
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <input id="todate-has-end-date" type="checkbox" checked={hasEndDate}
                     onChange={(e) => setHasEndDate(e.target.checked)}
-                    className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500 cursor-pointer" />
-                  <label htmlFor="todate-has-end-date" id="end-date-label" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">End</label>
+                    className="rounded border-border text-primary focus:ring-focus cursor-pointer" />
+                  <label htmlFor="todate-has-end-date" id="end-date-label" className="text-sm font-medium text-on-surface cursor-pointer">End</label>
                 </div>
                 {hasEndDate ? endDateBlock : (
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1.5 h-[156px] flex items-center justify-center">
-                    <span className="text-xs text-gray-400 dark:text-gray-500">No end date</span>
+                  <div className="border border-border rounded-lg px-2 py-1.5 h-[156px] flex items-center justify-center">
+                    <span className="text-xs text-muted">No end date</span>
                   </div>
                 )}
               </div>
@@ -443,47 +443,47 @@ const TodateForm = ({
 
             {/* Comment */}
             <div>
-              <label htmlFor="todate-comment" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">
-                Comment <span className="text-gray-500 dark:text-gray-400 text-xs">(optional)</span>
+              <label htmlFor="todate-comment" className="block text-sm font-medium text-on-surface mb-0.5">
+                Comment <span className="text-muted text-xs">(optional)</span>
               </label>
               <textarea id="todate-comment" value={comment} onChange={(e) => setComment(e.target.value)}
-                className="w-full min-h-[40px] px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-y"
+                className="input-base min-h-[40px] px-2 py-1.5 resize-y"
                 placeholder="Add a note..." rows={1} />
             </div>
           </div>
 
           {/* Right: tags column — full width when stacked, fixed width when side-by-side */}
           <div className="w-full @md:w-44 shrink-0 flex flex-col gap-1.5 min-w-0">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Tags <span className="text-gray-500 dark:text-gray-400 text-xs">(optional)</span>
+            <span className="text-sm font-medium text-on-surface">
+              Tags <span className="text-muted text-xs">(optional)</span>
             </span>
             {/* Inline tag creation — above selectable tags */}
             {onAddTag && (
-              <div className="flex flex-wrap items-center gap-1.5 pb-1 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex flex-wrap items-center gap-1.5 pb-1 border-b border-border">
                 <input type="text" value={newTagName} onChange={(e) => setNewTagName(e.target.value)}
                   placeholder="New tag" className={`flex-1 min-w-[60px] px-2 py-1 text-xs ${INPUT_CLASS}`}
                   aria-label="New tag name"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && newTagName.trim()) {
                       e.preventDefault();
-                      const t: TagType = { _id: crypto.randomUUID(), name: newTagName.trim(), color: newTagColor };
+                      const t: TagType = { _id: randomUUID() as TagType['_id'], name: newTagName.trim(), color: newTagColor };
                       onAddTag(t);
                       setSelectedTags((prev) => [...prev, t]);
                       setNewTagName("");
                     }
                   }} />
                 <input type="color" value={newTagColor} onChange={(e) => setNewTagColor(e.target.value)}
-                  className="h-6 w-6 min-w-6 cursor-pointer rounded border border-gray-300 dark:border-gray-500"
+                  className="h-6 w-6 min-w-6 cursor-pointer rounded border border-border"
                   aria-label="New tag color" />
                 <button type="button"
                   onClick={() => {
                     if (!newTagName.trim()) return;
-                    const t: TagType = { _id: crypto.randomUUID(), name: newTagName.trim(), color: newTagColor };
+                    const t: TagType = { _id: randomUUID() as TagType['_id'], name: newTagName.trim(), color: newTagColor };
                     onAddTag(t);
                     setSelectedTags((prev) => [...prev, t]);
                     setNewTagName("");
                   }}
-                  className="px-2 py-1 text-xs font-medium rounded bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500 cursor-pointer">
+                  className="px-2 py-1 text-xs font-medium rounded bg-secondary/80 text-on-surface hover:bg-secondary cursor-pointer">
                   +
                 </button>
               </div>
@@ -491,15 +491,15 @@ const TodateForm = ({
             {/* Selectable tag pills */}
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-wrap gap-1.5 content-start" role="group" aria-label="Select tags">
               {tagIds.length === 0 ? (
-                <span className="text-xs text-gray-400">No tags</span>
+                <span className="text-xs text-muted">No tags</span>
               ) : tagIds.map((tagId) => {
                 const tag = tags[tagId];
                 const isSel = selectedTags.some((t) => t._id === tag._id);
                 return (
                   <button key={tag._id} type="button" onClick={() => toggleTag(tag)}
                     className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
-                      isSel ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400'
+                      isSel ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border text-on-surface hover:border-primary/50'
                     }`}>
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} aria-hidden />
                     {tag.name}
@@ -512,7 +512,7 @@ const TodateForm = ({
 
         {/* Submit — centered on full width */}
         <button type="submit"
-          className="self-center px-8 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white font-medium rounded-lg transition-colors cursor-pointer">
+          className="self-center px-8 py-1.5 text-sm btn-primary text-white font-medium rounded-lg transition-colors cursor-pointer">
           {initialData ? "Update Todate" : "Save Todate"}
         </button>
       </form>
@@ -526,7 +526,7 @@ const TodateForm = ({
     >
       {/* Title */}
       <div className={w}>
-        <label htmlFor="todate-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">
+        <label htmlFor="todate-title" className="block text-sm font-medium text-on-surface mb-0.5">
           Title <span className="text-red-600" aria-hidden>*</span>
         </label>
         <input
@@ -534,7 +534,7 @@ const TodateForm = ({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+          className="w-full px-4 py-2 border border-border rounded-lg bg-surface-input text-on-surface placeholder:text-muted focus:border-focus focus:ring-2 focus:ring-focus/20 focus:outline-none"
           placeholder="Enter title"
           required
           autoComplete="off"
@@ -543,11 +543,11 @@ const TodateForm = ({
 
       {/* Start date */}
       <div className={w} role="group" aria-labelledby="date-format-label">
-        <p id="date-format-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <p id="date-format-label" className="block text-sm font-medium text-on-surface mb-2">
           When did this happen?
         </p>
         {renderDateFormatTabs('', dateTab, setDateTab)}
-        <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg ${panelPad} ${datePanelH}`}>
+        <div className={`border border-t-0 border-border rounded-b-lg ${panelPad} ${datePanelH}`}>
           {dateTab === "school" && (
             <SchoolYearDatePanel
               fieldPrefix=""
@@ -584,14 +584,14 @@ const TodateForm = ({
         <div className="flex items-center gap-2 mb-2">
           <input id="todate-has-end-date" type="checkbox" checked={hasEndDate}
             onChange={(e) => setHasEndDate(e.target.checked)}
-            className="rounded border-gray-300 dark:border-gray-500 text-blue-600 focus:ring-blue-500 cursor-pointer" />
-          <label htmlFor="todate-has-end-date" id="end-date-label" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+            className="rounded border-border text-primary focus:ring-focus cursor-pointer" />
+          <label htmlFor="todate-has-end-date" id="end-date-label" className="text-sm font-medium text-on-surface cursor-pointer">
             End date
           </label>
         </div>
         {hasEndDate && renderDateFormatTabs('end-', endDateTab, setEndDateTab)}
         {hasEndDate && (
-          <div className={`border border-t-0 border-gray-300 dark:border-gray-500 rounded-b-lg ${panelPad} ${datePanelH}`}>
+          <div className={`border border-t-0 border-border rounded-b-lg ${panelPad} ${datePanelH}`}>
             {endDateTab === "school" && (
               <SchoolYearDatePanel
                 fieldPrefix="end-"
@@ -626,50 +626,50 @@ const TodateForm = ({
 
       {/* Comment */}
       <div className={w}>
-        <label htmlFor="todate-comment" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-0.5">
-          Comment <span className="text-gray-500 dark:text-gray-400 text-xs">(optional)</span>
+        <label htmlFor="todate-comment" className="block text-sm font-medium text-on-surface mb-0.5">
+          Comment <span className="text-muted text-xs">(optional)</span>
         </label>
         <textarea id="todate-comment" value={comment} onChange={(e) => setComment(e.target.value)}
-          className="w-full min-h-[80px] px-4 py-2 border border-gray-300 dark:border-gray-500 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-y"
+          className="w-full min-h-[80px] px-4 py-2 border border-border rounded-lg bg-surface-input text-on-surface placeholder:text-muted focus:border-focus focus:ring-2 focus:ring-focus/20 focus:outline-none resize-y"
           placeholder="Add a note..." rows={3} />
       </div>
 
       {/* Tags */}
       <div className={w}>
         <div className="flex items-center justify-between gap-2 mb-0.5">
-          <span id="tags-label" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Tags <span className="text-gray-500 dark:text-gray-400 text-xs">(optional)</span>
+          <span id="tags-label" className="text-sm font-medium text-on-surface">
+            Tags <span className="text-muted text-xs">(optional)</span>
           </span>
-          <NewButton className="w-fit h-fit" name="Tag" action={toggleTagModal} ariaLabel="Create new tag" icon={tagIcon} />
+          <NewButton className="w-fit h-fit" name="Tag" action={toggleTagModal} ariaLabel="Create new tag" icon={icons.tag} />
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2" id="tags-hint">
+        <p className="text-xs text-muted mb-2" id="tags-hint">
           The todate card uses the first tag&apos;s color. Multiple tags are supported for filtering.
         </p>
         <div
-          className="relative border rounded-lg p-2 min-h-12 max-h-40 overflow-y-auto overscroll-contain bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-500"
+          className="relative border rounded-lg p-2 min-h-12 max-h-40 overflow-y-auto overscroll-contain bg-surface-input border-border"
           role="listbox"
           aria-labelledby="tags-label"
           aria-multiselectable
           aria-describedby="tags-hint"
         >
           {tagIds.length === 0 ? (
-            <p className="text-sm text-gray-500 py-2 w-fit" role="status">No tags yet. Create one or save without tags.</p>
+            <p className="text-sm text-muted py-2 w-fit" role="status">No tags yet. Create one or save without tags.</p>
           ) : tagIds.map((tagId) => {
             const tag = tags[tagId];
             const isSelected = selectedTags.some((t) => t._id === tag._id);
             return (
               <button key={tag._id} type="button" role="option" aria-selected={isSelected}
                 onClick={() => toggleTag(tag)}
-                className={`w-full text-left cursor-pointer px-3 py-2 rounded text-sm flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-inset touch-manipulation text-gray-900 dark:text-gray-100 ${isSelected ? "bg-gray-200 dark:bg-gray-600" : ""}`}>
+                className={`w-full text-left cursor-pointer px-3 py-2 rounded text-sm flex items-center gap-2 hover:bg-secondary/50 focus:outline-none focus-visible:ring-1 focus-visible:ring-focus focus-visible:ring-inset touch-manipulation text-on-surface ${isSelected ? "bg-secondary/80" : ""}`}>
                 <span className="inline-block w-3 h-3 rounded mr-0.5 shrink-0" style={{ backgroundColor: tag.color }} aria-hidden />
                 <span className="flex-1 min-w-0 truncate">{tag.name}</span>
                 {onEditTag ? (
                   <span role="button" tabIndex={0}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEditTag(tag); }}
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onEditTag(tag); } }}
-                    className="shrink-0 min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer text-gray-600 dark:text-gray-400 touch-manipulation"
+                    className="shrink-0 min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded hover:bg-secondary/50 focus:outline-none focus-visible:ring-1 focus-visible:ring-focus cursor-pointer text-muted touch-manipulation"
                     aria-label={`Edit ${tag.name}`}>
-                    <Icon src={editIcon} className="w-4 h-4" />
+                    <Icon src={icons.edit} className="w-4 h-4" />
                   </span>
                 ) : null}
               </button>
@@ -680,11 +680,11 @@ const TodateForm = ({
       {selectedTags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2 min-h-10 w-11/12" role="list" aria-label="Selected tags">
           {selectedTags.map((tag) => (
-            <span key={tag._id} className="px-3 py-1 rounded-full text-sm font-medium inline-flex items-center bg-gray-200 dark:bg-gray-600">
+            <span key={tag._id} className="px-3 py-1 rounded-full text-sm font-medium inline-flex items-center bg-secondary/80">
               <span className="inline-block w-3 h-3 rounded mr-2 shrink-0" style={{ backgroundColor: tag.color }} aria-hidden />
               {tag.name}
               <button type="button" onClick={() => removeTag(tag._id)}
-                className="ml-1.5 min-h-[24px] min-w-[24px] inline-flex items-center justify-center rounded hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+                className="ml-1.5 min-h-[24px] min-w-[24px] inline-flex items-center justify-center rounded hover:bg-secondary/50 focus:outline-none focus-visible:ring-1 focus-visible:ring-focus cursor-pointer"
                 aria-label={`Remove ${tag.name} from selection`}>
                 <span aria-hidden>&times;</span>
               </button>
@@ -694,7 +694,7 @@ const TodateForm = ({
       )}
 
       <button type="submit"
-        className="w-full min-h-[44px] bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 text-white font-medium py-2 px-4 rounded-lg transition-colors touch-manipulation cursor-pointer">
+        className="btn-primary w-full">
         {initialData ? "Update Todate" : "Save Todate"}
       </button>
     </form>

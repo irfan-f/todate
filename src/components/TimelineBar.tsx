@@ -390,7 +390,7 @@ export default function TimelineBar({
           y1={PADDING_Y}
           x2={AXIS_X}
           y2={height - PADDING_Y}
-          className="stroke-gray-400 dark:stroke-gray-500"
+          className="stroke-border"
           strokeWidth={2}
         />
 
@@ -404,14 +404,14 @@ export default function TimelineBar({
                 y1={py}
                 x2={AXIS_X}
                 y2={py}
-                className="stroke-gray-400 dark:stroke-gray-500"
+                className="stroke-border"
                 strokeWidth={1}
               />
               <text
                 x={AXIS_X - 6}
                 y={py + 3}
                 textAnchor="end"
-                className="fill-gray-600 dark:fill-gray-400 font-mono"
+                className="fill-muted font-mono"
                 style={{ fontSize: 9 }}
               >
                 {yr}
